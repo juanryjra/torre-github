@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>La Torre de la Evaluación</title>
+<meta name="description" content="Escape room interactivo sobre evaluación para el aprendizaje.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Alegreya:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: una torre oscura; HUD fijo arriba, guardián a la izquierda y reto a la derecha (se apilan en móvil). Tema único oscuro, a propósito. */
+:root{
+  --bg:#0c0b12; --bg2:#13111c; --panel:#1a1726; --panel2:#221e31; --line:#3a3350;
+  --fg:#ebe4d6; --muted:#a49cb5; --gold:#d6b36a; --gold2:#f3d998; --violet:#9d7bff; --teal:#5fd4cf;
+  --ok:#62d48d; --bad:#ff6b6b; --warn:#ffb454;
+  --f-title:"Cinzel Decorative","Cinzel",Georgia,serif; --f-head:"Cinzel",Georgia,serif; --f-body:"Alegreya",Georgia,"Times New Roman",serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#2a1f45 0%,transparent 60%),radial-gradient(900px 500px at 0% 110%,#1d2a33 0%,transparent 60%),var(--bg);background-attachment:fixed;color:var(--fg);font:18px/1.55 var(--f-body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;font-weight:700;letter-spacing:.02em}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.screen{display:grid;gap:24px}
+.label{font-family:var(--f-head);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--gold);background:linear-gradient(180deg,#3b2f17,#241c0e);color:var(--gold2);font-family:var(--f-head);font-weight:700;letter-spacing:.06em;padding:12px 22px;border-radius:6px;transition:transform .12s,box-shadow .2s}
+.btn:hover{box-shadow:0 0 18px rgba(214,179,106,.35);transform:translateY(-1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--fg)}
+.btn.small{padding:7px 12px;font-size:.8rem}
+.btn.danger{border-color:var(--bad);color:var(--bad);background:transparent}
+.field{display:grid;gap:6px}
+.field input,.field textarea,select{background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:11px 12px;width:100%}
+.field textarea{min-height:96px;resize:vertical}
+.note{font-size:.88rem;color:var(--muted)}
+.err{color:var(--bad);font-size:.92rem;min-height:1.3em}
+
+/* ---------- Intro ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:28px;align-items:start}
+.hero-title{font-family:var(--f-title);font-weight:900;font-size:clamp(2.1rem,5.4vw,3.9rem);line-height:1.05;color:var(--gold2);text-shadow:0 0 28px rgba(157,123,255,.35)}
+.hero-title span{display:block;font-size:.42em;letter-spacing:.32em;color:var(--violet);font-family:var(--f-head);margin-bottom:10px;text-shadow:none}
+.lore{max-width:62ch;color:#d9d1c2}
+.portal{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg2)}
+.portal img{display:block;width:100%;height:auto}
+.portal .cap{position:absolute;inset:auto 0 0;padding:14px 16px;background:linear-gradient(transparent,rgba(8,7,12,.92));font-size:.92rem}
+.reg{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;display:grid;gap:14px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.rule{border-top:1px solid var(--line);padding-top:10px;font-size:.95rem}
+.rule b{display:block;font-family:var(--f-head);color:var(--gold);font-size:.82rem;letter-spacing:.08em}
+.board{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.board ol{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.board li{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto;gap:10px;align-items:baseline;border-bottom:1px dashed var(--line);padding:4px 0;font-variant-numeric:tabular-nums}
+.board li .n{font-family:var(--f-head);color:var(--gold)}
+.board li .who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board li .who small{color:var(--muted)}
+.foot{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:16px}
+
+/* ---------- HUD ---------- */
+.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(12,11,18,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hud-in{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+.hud .stat{display:grid;line-height:1.15}
+.hud .stat b{font-family:var(--f-head);font-size:1.05rem;font-variant-numeric:tabular-nums}
+.hud .timer b{font-size:1.35rem;color:var(--teal)}
+.hud .timer.low b{color:var(--bad);animation:pulse 1s infinite}
+.hearts{display:flex;gap:4px}
+.heart{width:20px;height:18px;position:relative}
+.heart::before,.heart::after{content:"";position:absolute;top:0;width:10px;height:16px;border-radius:10px 10px 0 0;background:var(--bad)}
+.heart::before{left:10px;transform:rotate(-45deg);transform-origin:0 100%}
+.heart::after{left:0;transform:rotate(45deg);transform-origin:100% 100%}
+.heart.off::before,.heart.off::after{background:#3a3248}
+.steps{display:flex;gap:5px}
+.steps i{width:22px;height:6px;border-radius:3px;background:#2b2540}
+.steps i.done{background:var(--gold)}
+.steps i.now{background:var(--violet);box-shadow:0 0 8px var(--violet)}
+.hud .sp{flex:1}
+.iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:7px 11px;font-family:var(--f-head);font-size:.8rem}
+
+/* ---------- Escena ---------- */
+.scene{display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:start}
+.guard{position:sticky;top:90px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.guard img{display:block;width:100%;height:auto;aspect-ratio:300/422;object-fit:cover}
+.guard .gtxt{padding:14px 16px 18px;display:grid;gap:8px}
+.guard h3{color:var(--gold2);font-size:1.05rem}
+.speech{font-style:italic;color:#d8d0e6;font-size:.98rem}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;display:grid;gap:18px;min-width:0}
+.stage h2{font-size:clamp(1.3rem,2.6vw,1.75rem);color:var(--gold2)}
+.part{display:grid;gap:14px}
+.feedback{padding:10px 14px;border-radius:6px;border:1px solid var(--line);background:var(--bg2);font-size:.98rem}
+.feedback.ok{border-color:var(--ok);color:var(--ok)}
+.feedback.bad{border-color:var(--bad);color:#ffb3b3}
+.row-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.hintbox{border-left:3px solid var(--violet);padding:8px 12px;background:rgba(157,123,255,.08);font-size:.95rem}
+.shake{animation:shake .45s}
+@keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+@keyframes pulse{50%{opacity:.45}}
+
+/* pergamino */
+.scroll{margin:0;background:linear-gradient(180deg,#f3e6c4,#e8d6a8);color:#2b2112;border-radius:6px;padding:20px 22px;line-height:2.3;font-size:1.05rem;box-shadow:inset 0 0 30px rgba(120,80,20,.25)}
+.scroll select{display:inline-block;width:auto;max-width:100%;background:#fff8e6;color:#2b2112;border:1px solid #9c7a3c;padding:3px 8px;margin:2px 0;font-weight:600}
+.scroll footer{margin-top:8px;font-size:.85rem;font-style:italic;line-height:1.4;color:#5a4320}
+/* clasificación */
+.items{display:grid;gap:10px}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:8px}
+.item p{margin:0}
+.item select{width:auto;min-width:170px;max-width:100%}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:8px 14px;font-family:var(--f-head);font-size:.8rem;letter-spacing:.05em}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--gold);color:#1c150a}
+.seg.v button.on[data-v="F"]{background:var(--teal)}
+.seg.v button.on[data-v="S"]{background:var(--violet);color:#fff}
+.mcq{display:grid;gap:8px;padding:14px;background:var(--bg2);border:1px solid var(--line);border-radius:8px}
+.mcq label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:6px;border-radius:6px;cursor:pointer}
+.mcq label:hover{background:rgba(255,255,255,.04)}
+.mcq input{margin-top:6px;accent-color:var(--gold)}
+
+/* engranajes */
+.gears{display:grid;gap:8px;counter-reset:g}
+.gear{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;background:var(--bg2);border:1px solid var(--line);border-radius:8px}
+.gear .pos{font-family:var(--f-head);color:var(--gold);font-size:1.1rem;text-align:center}
+.gear .ctr{display:flex;gap:4px}
+.gear .ctr button{border:1px solid var(--line);background:var(--panel2);border-radius:5px;width:34px;height:34px}
+.gear .ctr button.x{width:auto;padding:0 8px;font-size:.78rem;font-family:var(--f-head)}
+.discard{border:1px dashed var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:8px;min-height:56px}
+.discard .gear{opacity:.7}
+
+/* runas escalera */
+.runes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.rune{border:1px solid var(--line);background:var(--bg2);border-radius:10px;padding:16px 10px;font-family:var(--f-head);font-weight:700;display:grid;gap:6px;justify-items:center;text-align:center;font-size:.9rem}
+.rune .glyph{font-size:1.8rem;color:var(--violet)}
+.rune.lit{border-color:var(--gold);box-shadow:0 0 16px rgba(214,179,106,.4)}
+.rune.lit .glyph{color:var(--gold2)}
+.rune .ord{font-size:.75rem;color:var(--gold)}
+
+/* cerradura */
+.lock{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.dial{display:grid;gap:6px;justify-items:center}
+.dial button{width:52px;height:34px;border:1px solid var(--line);background:var(--panel2);border-radius:6px}
+.dial .d{width:64px;height:78px;display:grid;place-items:center;font-family:var(--f-title);font-size:2.3rem;color:var(--teal);background:#0a0f13;border:2px solid #2d4a50;border-radius:10px;box-shadow:inset 0 0 18px rgba(95,212,207,.25);font-variant-numeric:tabular-nums}
+
+/* grimorio */
+.grimoire{position:fixed;z-index:40;top:calc(env(safe-area-inset-top,0px) + 70px);right:max(16px,env(safe-area-inset-right,0px));width:min(420px,calc(100vw - 32px));max-height:70vh;overflow:auto;background:#17131f;border:1px solid var(--gold);border-radius:10px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.6);display:grid;gap:12px}
+.grimoire ol{margin:0;padding-left:1.3em;display:grid;gap:10px}
+.grimoire li::marker{color:var(--gold);font-family:var(--f-head)}
+
+/* overlays */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(5,4,9,.82);display:grid;place-items:center;padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px));overflow:auto}
+.modal{max-width:620px;width:100%;background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:26px;display:grid;gap:14px;text-align:center;justify-items:center;box-shadow:0 0 60px rgba(157,123,255,.25)}
+.modal img{width:160px;border-radius:8px;border:1px solid var(--line)}
+.modal h2{color:var(--gold2);font-size:1.6rem}
+.clue{border:1px dashed var(--gold);border-radius:8px;padding:12px 14px;background:rgba(214,179,106,.07);text-align:left;width:100%}
+
+/* final */
+.seal{width:170px;height:170px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#fff3c4,#e2b650 40%,#8a6420 75%);box-shadow:0 0 50px rgba(243,217,152,.6),inset 0 -8px 20px rgba(0,0,0,.35);animation:glow 2.4s ease-in-out infinite;color:#4a3410;font-family:var(--f-title);font-weight:900;font-size:1.05rem;text-align:center;line-height:1.1;padding:20px}
+@keyframes glow{50%{box-shadow:0 0 80px rgba(243,217,152,.9),inset 0 -8px 20px rgba(0,0,0,.35)}}
+.win{display:grid;justify-items:center;text-align:center;gap:18px;background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:30px 22px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;width:100%}
+.tile{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;text-align:left}
+.tile b{display:block;font-family:var(--f-head);font-size:1.6rem;color:var(--gold2);font-variant-numeric:tabular-nums}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+
+/* docente */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:.92rem}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-family:var(--f-head);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--bg2);position:sticky;top:0}
+th button{background:none;border:0;padding:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit}
+td.num{font-variant-numeric:tabular-nums;text-align:right}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;font-family:var(--f-head);border:1px solid}
+.pill.done{color:var(--ok);border-color:var(--ok)}
+.pill.run{color:var(--warn);border-color:var(--warn)}
+.pill.reset{color:var(--bad);border-color:var(--bad)}
+.quote{font-style:italic;color:#d8d0e6;max-width:36ch}
+.sync{font-size:.82rem;color:var(--muted)}
+.sync.off{color:var(--warn)}
+
+@media (max-width:860px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .scene{grid-template-columns:minmax(0,1fr)}
+  .guard{position:static;display:grid;grid-template-columns:110px minmax(0,1fr)}
+  .guard img{height:100%;aspect-ratio:auto}
+  .item{grid-template-columns:minmax(0,1fr)}
+  .item select{width:100%}
+}
+@media (max-width:520px){
+  body{font-size:17px}
+  .runes{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stage{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+[hidden]{display:none!important}
+img{max-width:100%}
+</style>
+<script src="config.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+const IMG = Object.fromEntries(['tiempo','duende','inventor','alquimista','oraculo','golem','sombra','cronista'].map(n => [n, 'img/' + n + '.jpg']));
+const PASS = "santillana2026";
+const TOTAL_SEC = 30 * 60;
+const MAX_LIVES = 3;
+
+/* ---------------- utilidades ---------------- */
+const $ = s => document.querySelector(s);
+function h(tag, attrs, ...kids){
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs||{})){
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const k of kids.flat()){ if (k == null || k === false) continue; e.append(k.nodeType ? k : document.createTextNode(String(k))); }
+  return e;
+}
+const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const fmtTime = s => { s=Math.max(0,Math.round(s)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); };
+const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z]/g,'');
+const store = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* ---------------- sonido (Web Audio, sin archivos) ---------------- */
+const Sfx = (() => {
+  let ctx = null, master = null, drone = null, muted = store.get('torre-mute') === '1';
+  function ac(){
+    if (!ctx){ const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ctx = new C(); master = ctx.createGain(); master.gain.value = .55; master.connect(ctx.destination); }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(f, dur, type='sine', vol=.25, when=0, slide=null){
+    if (muted) return; const c = ac(); if (!c) return;
+    const t = c.currentTime + when, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t+dur);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t+.02); g.gain.exponentialRampToValueAtTime(.0001, t+dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+.05);
+  }
+  function startDrone(){
+    if (muted || drone) return; const c = ac(); if (!c) return;
+    const g = c.createGain(); g.gain.value = .0001; g.gain.exponentialRampToValueAtTime(.07, c.currentTime+3);
+    const lp = c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = 420;
+    const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = .08; lg.gain.value = 160; lfo.connect(lg); lg.connect(lp.frequency);
+    const os = [55, 82.4, 110.6].map((f,i)=>{ const o=c.createOscillator(); o.type = i===1?'triangle':'sawtooth'; o.frequency.value=f; o.detune.value = i*6; o.connect(lp); o.start(); return o; });
+    lp.connect(g); g.connect(master); lfo.start();
+    drone = {g, os, lfo};
+  }
+  function stopDrone(){ if (!drone) return; const c = ac(); drone.g.gain.exponentialRampToValueAtTime(.0001, c.currentTime+.6); const d = drone; drone = null; setTimeout(()=>{ d.os.forEach(o=>o.stop()); d.lfo.stop(); }, 800); }
+  return {
+    get muted(){ return muted; },
+    toggle(){ muted = !muted; store.set('torre-mute', muted?'1':'0'); if (muted) stopDrone(); else if (S.running) startDrone(); return muted; },
+    startDrone, stopDrone,
+    click(){ tone(700,.07,'triangle',.12); },
+    flip(){ tone(380,.12,'triangle',.14,0,720); },
+    ok(){ [523,659,784].forEach((f,i)=>tone(f,.28,'triangle',.22,i*.08)); },
+    bad(){ tone(196,.4,'sawtooth',.18,0,92); tone(147,.45,'square',.06,.05,70); },
+    unlock(){ [392,523,659,784,1046].forEach((f,i)=>tone(f,.45,'triangle',.2,i*.1)); tone(1568,.9,'sine',.08,.5); },
+    tick(){ tone(1250,.04,'square',.06); },
+    gameover(){ [392,330,262,196,131].forEach((f,i)=>tone(f,.55,'sawtooth',.14,i*.22)); },
+    win(){ const m=[[523,0],[659,.14],[784,.28],[1046,.42],[784,.62],[1046,.76],[1318,.95]]; m.forEach(([f,t])=>{ tone(f,.5,'triangle',.22,t); tone(f/2,.5,'sine',.1,t); }); tone(1568,1.6,'sine',.1,1.2); }
+  };
+})();
+
+/* ---------------- registro compartido (Google Sheets vía Apps Script) ---------------- */
+const API = String((window.TORRE_CONFIG && window.TORRE_CONFIG.urlRegistro) || '').trim();
+const LOCAL_KEY = 'torre-jugadores';
+const NUMS = ['puntos','mejorPuntaje','retoActual','retosSuperados','reinicios','tiempoSeg','bonoTiempo'];
+let players = [], dbq = Promise.resolve(), syncOk = true;
+function localAll(){ try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}'); } catch(e){ return {}; } }
+function localPut(all){ try { localStorage.setItem(LOCAL_KEY, JSON.stringify(all)); } catch(e){} }
+function setSync(ok){ syncOk = ok; }
+async function post(body){
+  const r = await fetch(API, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+  const j = await r.json(); if (!j.ok) throw new Error(j.error || 'error'); return j;
+}
+function saveRemote(patch){
+  if (!S.docId) return;
+  const id = S.docId, body = Object.assign({}, patch, { actualizado: new Date().toISOString() });
+  if (!API){ const all = localAll(); all[id] = Object.assign(all[id] || { id }, body); localPut(all); loadPlayers(); return; }
+  dbq = dbq.then(() => post({ action:'upsert', id, data: body })).then(() => setSync(true)).catch(e => { console.warn('registro', e); setSync(false); });
+}
+function normP(p){ NUMS.forEach(k => p[k] = Number(p[k]) || 0); ['id','nombre','grupo','estado','compromiso','inicio','fin','actualizado'].forEach(k => p[k] = p[k] == null ? '' : String(p[k])); return p; }
+async function loadPlayers(){
+  try {
+    let list;
+    if (!API) list = Object.values(localAll());
+    else { const r = await fetch(API + (API.includes('?') ? '&' : '?') + 't=' + Date.now()); const j = await r.json(); list = j.jugadores || []; }
+    players = list.map(normP);
+    renderBoard();
+    const typing = document.activeElement && document.activeElement.id === 't-filter';
+    if (S.view === 'teacher' && S.teacherOk && !S.confirming && !typing) renderTeacher();
+  } catch(e){ console.warn('lectura', e); }
+}
+async function deletePlayer(id){
+  if (!API){ const all = localAll(); delete all[id]; localPut(all); return loadPlayers(); }
+  await post({ action:'delete', id, clave: S.teacherKey });
+  await loadPlayers();
+}
+setTimeout(loadPlayers, 0);
+setInterval(() => { if (['intro','teacher','win'].includes(S.view) && !document.hidden) loadPlayers(); }, 10000);
+
+/* ---------------- contenido ---------------- */
+const GUARD = {
+  tiempo:{name:'Cronos, Guardián del Reloj', img:'tiempo'},
+  duende:{name:'Grimbol, el Embaucador de Mitos', img:'duende'},
+  inventor:{name:'Maese Engranaje', img:'inventor'},
+  alquimista:{name:'Veridián, el Alquimista', img:'alquimista'},
+  oraculo:{name:'Selene, Oráculo de la Escalera', img:'oraculo'},
+  golem:{name:'Petra, la Cerradura Viviente', img:'golem'},
+  sombra:{name:'La Sombra del Juicio', img:'sombra'},
+  cronista:{name:'La Cronista', img:'cronista'}
+};
+
+/* ---------------- estado ---------------- */
+const S = { teacherKey:'', confirming:false, view:'intro', running:false, docId:null, nombre:'', grupo:'', reto:0, score:0, lives:MAX_LIVES, livesLost:0, hintUsed:false, restarts:0, clues:[], runStart:0, timer:null, bestScore:0, teacherOk:false, sort:{k:'puntos',dir:-1}, finalSec:0, lastScore:0 };
+
+/* ---------------- RETOS ---------------- */
+const RETOS = [
+/* 1 */ {
+  g:'cronista', title:'El Pergamino de la Cronista',
+  intro:'«La Sombra rasgó mi pergamino y ya nadie recuerda qué significa evaluar para aprender. Reconstruye la definición y luego demuéstrame que reconoces una retroalimentación que de verdad ayuda.»',
+  hint:'La definición de Clark (2008, citado en Montoya, 2018) habla de una motivación que nace desde adentro y de seguir aprendiendo durante toda la vida. En la segunda parte hazte tres preguntas: ¿llegó a tiempo para mejorar? ¿se entiende? ¿señala algo concreto?',
+  clue:'Primer dígito de la cerradura: ¿cuántas virtudes debe reunir una buena retroalimentación según el pergamino de la Cronista?',
+  render(box, api){
+    const A = h('div',{class:'part'}), B = h('div',{class:'part',hidden:true});
+    box.append(A,B);
+    const BANK = ['motivar','calificar','intrínseca','extrínseca','capacidades','notas','a lo largo de la vida','al final del periodo'];
+    const RIGHT = ['motivar','intrínseca','capacidades','a lo largo de la vida'];
+    const sel = RIGHT.map((_,i) => h('select',{id:'perg-'+i,'aria-label':'Espacio '+(i+1)}, h('option',{value:'',text:'— '+(i+1)+' —'}), shuffle(BANK).map(w=>h('option',{value:w,text:w}))));
+    sel.forEach(s => s.addEventListener('change',()=>Sfx.click()));
+    const fa = h('div',{class:'feedback',hidden:true});
+    const btn = h('button',{class:'btn'},'Restaurar el pergamino');
+    btn.addEventListener('click', () => {
+      if (sel.some(s=>!s.value)){ feedback(fa,'bad','Completa los cuatro espacios.'); return; }
+      const good = sel.filter((s,i)=>s.value===RIGHT[i]).length;
+      if (good === 4){ feedback(fa,'ok','¡El pergamino brilla de nuevo!'); btn.disabled = true; Sfx.ok(); setTimeout(()=>{ A.hidden = true; B.hidden = false; }, 700); }
+      else { feedback(fa,'bad',`${good} de 4 palabras están en su lugar.`); api.lose('El pergamino rechazó la definición.'); }
+    });
+    A.append(h('h3',{text:'Parte 1 · El pergamino roto'}), h('p',{text:'Elige la palabra que va en cada espacio. Cuidado: en el banco hay palabras trampa. Solo sabrás cuántas acertaste.'}),
+      h('blockquote',{class:'scroll'}, 'La evaluación para el aprendizaje es una forma de evaluación orientada a ', sel[0], ' a los y las estudiantes de forma ', sel[1], ', además de generar ', sel[2], ' para continuar el aprendizaje ', sel[3], '.', h('footer',{text:'Clark (2008), citado en Montoya (2018)'})),
+      fa, h('div',{class:'row-actions'}, btn));
+    B.append(h('h3',{text:'Parte 2 · Las tres virtudes de la retroalimentación'}),
+      h('p',{text:'El pergamino continúa: «La retroalimentación aporta información útil para optimizar el aprendizaje cuando es oportuna, clara y específica». Para cada comentario indica qué virtud le falta, o si cumple las tres. Necesitas las 8 correctas.'}));
+    classify(B, [
+      ['Al terminar el año escolar, el docente devuelve el ensayo del primer periodo con la nota «Revisa tus citas». Ya no hay forma de corregirlo.','Le falta ser oportuna'],
+      ['Camila expuso en marzo; en noviembre recibe por fin los comentarios sobre cómo mejorar sus diapositivas.','Le falta ser oportuna'],
+      ['A un estudiante de séptimo grado: «Tu argumentación adolece de cohesión epistémica y de isomorfismo entre premisas».','Le falta ser clara'],
+      ['Al margen del taller, a mano y con abreviaturas: «rev. coh. y cit. s/ norm., ver crit. 3b».','Le falta ser clara'],
+      ['«Buen trabajo, sigue así.»','Le falta ser específica'],
+      ['«Le falta un poco más; tú puedes hacerlo mejor.»','Le falta ser específica'],
+      ['Mientras resuelve el taller: «En el ejercicio 3 confundiste área con perímetro; revisa la fórmula del recuadro azul y vuelve a intentarlo».','Cumple las tres'],
+      ['Sobre el borrador, antes de la entrega final: «Tu introducción presenta bien el tema; en la conclusión, retoma la pregunta inicial y respóndela con tus dos hallazgos principales».','Cumple las tres']
+    ], ['Le falta ser oportuna','Le falta ser clara','Le falta ser específica','Cumple las tres'], api, () => api.pass());
+  }
+},
+/* 2 */ {
+  g:'duende', title:'La Guarida de los Mitos',
+  intro:'«Je, je… Llevo años susurrando falsedades en las salas de profesores. ¿Sabrás distinguir mis mitos de las verdades? Y si los desenmascaras, demuéstrame que sabes desmontarlos.»',
+  hint:'Las tres frases de las tarjetas del taller («Evaluar es calificar», «Solo el profesor evalúa», «La evaluación es al final») son mitos. Desconfía de las palabras absolutas: «solo», «únicamente», «ya no necesita», «hay que elegir solo una».',
+  clue:'Segundo dígito: ¿cuántos MITOS desenmascaraste en la guarida de Grimbol?',
+  render(box, api){
+    const A = h('div',{class:'part'}), B = h('div',{class:'part',hidden:true});
+    box.append(A,B);
+    A.append(h('h3',{text:'Parte 1 · ¿Mito o verdad?'}), h('p',{text:'Clasifica las 10 afirmaciones. Necesitas las 10 correctas; Grimbol solo te dirá cuántas acertaste.'}));
+    classify(A, [
+      ['Evaluar es lo mismo que calificar.','Mito'],
+      ['Solo el profesor puede evaluar.','Mito'],
+      ['La evaluación ocurre únicamente al final del proceso.','Mito'],
+      ['La retroalimentación es útil cuando es oportuna, clara y específica.','Verdad'],
+      ['La evaluación para el aprendizaje busca motivar a los estudiantes de forma intrínseca.','Verdad'],
+      ['Si un estudiante saca buena nota, ya no necesita retroalimentación.','Mito'],
+      ['La autoevaluación y la coevaluación aportan información valiosa sobre el aprendizaje.','Verdad'],
+      ['La evaluación formativa y la sumativa son enemigas: hay que elegir solo una.','Mito'],
+      ['Las emociones influyen en la manera como vivimos una evaluación.','Verdad'],
+      ['Elegir entre evaluación sumativa o formativa depende del propósito de la evaluación.','Verdad']
+    ], ['Mito','Verdad'], api, () => { A.hidden = true; B.hidden = false; Sfx.ok(); });
+    B.append(h('h3',{text:'Parte 2 · Desmonta el mito'}), h('p',{text:'Para cada mito elige la verdad que lo derriba. Las tres deben ser correctas.'}));
+    mcq(B, [
+      ['Mito: «Evaluar es calificar».', [
+        ['Calificar es solo una parte: evaluar es recoger y analizar información para tomar decisiones que mejoren el aprendizaje.',1],
+        ['Evaluar sí es calificar, pero usando escalas numéricas más precisas.',0],
+        ['Evaluar consiste en aplicar más exámenes a lo largo del periodo.',0]]],
+      ['Mito: «Solo el profesor evalúa».', [
+        ['Los estudiantes evalúan a sus compañeros solo cuando el docente no tiene tiempo.',0],
+        ['Docentes y estudiantes participan: la autoevaluación y la coevaluación desarrollan autonomía para aprender toda la vida.',1],
+        ['La evaluación es responsabilidad exclusiva de la institución y sus directivas.',0]]],
+      ['Mito: «La evaluación es al final del proceso».', [
+        ['Debe hacerse solo al inicio, con una prueba diagnóstica.',0],
+        ['Se evalúa al final, pero entregando las notas más rápido.',0],
+        ['Acompaña todo el proceso: diagnóstico inicial, seguimiento con retroalimentación y valoración final.',1]]]
+    ], api, () => api.pass());
+  }
+},
+/* 3 */ {
+  g:'inventor', title:'La Máquina del Proceso',
+  intro:'«Mi máquina reproduce el proceso de evaluación para el aprendizaje, pero alguien metió dos piezas falsas y desordenó los engranajes. Retira las intrusas y ordena las seis piezas verdaderas.»',
+  hint:'Las piezas falsas no ayudan a aprender: una fomenta la competencia, otra esconde los criterios. El proceso empieza con un diagnóstico y los objetivos, y termina usando la información para reflexionar y retroalimentar.',
+  clue:'Tercer dígito: la posición que ocupa el engranaje «Diseñar y aplicar instrumentos» en la máquina de Maese Engranaje.',
+  render(box, api){
+    const CORRECT = [
+      'Hacer un diagnóstico inicial e identificar los objetivos a alcanzar, articulándolos con las actividades de evaluación.',
+      'Desagregar los objetivos en indicadores de habilidades, destrezas, actitudes y desempeños esperados.',
+      'Diseñar y aplicar instrumentos de evaluación que permitan establecer los desempeños esperados.',
+      'Recopilar y analizar la información de los instrumentos frente al alcance de los aprendizajes.',
+      'Decidir sobre los resultados obtenidos, las actividades, los instrumentos, el diseño y los contenidos.',
+      'Usar la información recolectada para reflexionar y hacer recomendaciones pertinentes, oportunas y concretas.'
+    ];
+    const FAKE = ['Publicar un ranking de notas del curso para motivar la competencia entre estudiantes.','Aplicar la prueba final sin socializar antes los criterios de evaluación.'];
+    let order = shuffle(CORRECT.concat(FAKE)), out = [];
+    const p = h('div',{class:'part'});
+    const list = h('div',{class:'gears'}), tray = h('div',{class:'discard'});
+    const fb = h('div',{class:'feedback',hidden:true});
+    p.append(h('p',{text:'Usa ▲ ▼ para mover cada engranaje y «Retirar» para sacar las piezas falsas (hay 2). Tras cada intento la máquina te dirá cuántos engranajes giran en su posición correcta.'}),
+      list, h('div',{class:'label',text:'Piezas retiradas'}), tray, fb,
+      h('div',{class:'row-actions'}, h('button',{class:'btn',onclick:check},'Encender la máquina')));
+    box.append(p);
+    function draw(){
+      list.innerHTML = ''; tray.innerHTML = '';
+      order.forEach((t,i) => list.append(h('div',{class:'gear'}, h('span',{class:'pos',text:i+1}), h('span',{text:t}),
+        h('span',{class:'ctr'},
+          h('button',{'aria-label':'Subir',disabled:i===0,onclick:()=>{ Sfx.click(); [order[i-1],order[i]]=[order[i],order[i-1]]; draw(); }},'▲'),
+          h('button',{'aria-label':'Bajar',disabled:i===order.length-1,onclick:()=>{ Sfx.click(); [order[i+1],order[i]]=[order[i],order[i+1]]; draw(); }},'▼'),
+          h('button',{class:'x',onclick:()=>{ Sfx.click(); out.push(order.splice(i,1)[0]); draw(); }},'Retirar')))));
+      if (!out.length) tray.append(h('span',{class:'note',text:'Aún no has retirado piezas.'}));
+      out.forEach((t,i) => tray.append(h('div',{class:'gear'}, h('span',{class:'pos',text:'✕'}), h('span',{text:t}),
+        h('span',{class:'ctr'}, h('button',{class:'x',onclick:()=>{ Sfx.click(); order.push(out.splice(i,1)[0]); draw(); }},'Devolver')))));
+    }
+    function check(){
+      if (order.length !== 6){ feedback(fb,'bad', `La máquina necesita exactamente 6 engranajes; ahora tiene ${order.length}.`); return; }
+      const good = order.filter((t,i)=>t===CORRECT[i]).length;
+      const fakesIn = order.filter(t=>FAKE.includes(t)).length;
+      if (good === 6){ feedback(fb,'ok','¡La máquina gira perfectamente!'); setTimeout(()=>api.pass(), 500); return; }
+      let msg = `Engranajes en su posición correcta: ${good} de 6.`;
+      if (fakesIn) msg += ` Además, ${fakesIn === 1 ? 'una pieza falsa sigue' : 'las dos piezas falsas siguen'} dentro de la máquina.`;
+      feedback(fb,'bad', msg); api.lose('La máquina se atascó.');
+    }
+    draw();
+  }
+},
+/* 4 */ {
+  g:'alquimista', title:'El Laboratorio de las Esencias',
+  intro:'«La evaluación sumativa y la formativa no se contraponen: se complementan. Pero cada esencia debe ir en su frasco. Si las mezclas mal, el laboratorio explota.»',
+  hint:'Pregúntate: ¿sucede mientras se aprende, para mejorar y ajustar (formativa), o al cierre, para certificar y decidir (sumativa)? Hay exactamente 6 de cada una.',
+  clue:'Cuarto dígito: ¿cuántas esencias pertenecían al frasco de la evaluación FORMATIVA?',
+  render(box, api){
+    const p = h('div',{class:'part'});
+    box.append(p);
+    p.append(h('p',{text:'Asigna cada esencia a su frasco: Formativa o Sumativa. Necesitas las 12 correctas; Veridián solo revela cuántas acertaste.'}));
+    classify(p, [
+      ['Se realiza durante el proceso de aprendizaje.','Formativa'],
+      ['Se aplica al cierre de una unidad o periodo.','Sumativa'],
+      ['Su propósito principal es mejorar el aprendizaje mientras ocurre.','Formativa'],
+      ['Su propósito principal es certificar el nivel de logro alcanzado.','Sumativa'],
+      ['Ofrece retroalimentación oportuna para ajustar el camino.','Formativa'],
+      ['Su resultado suele traducirse en una nota o calificación final.','Sumativa'],
+      ['Ejemplo: un ticket de salida al terminar la clase.','Formativa'],
+      ['Ejemplo: el examen final del periodo.','Sumativa'],
+      ['Permite al docente ajustar la enseñanza sobre la marcha.','Formativa'],
+      ['Promueve la autoevaluación y la coevaluación frecuentes.','Formativa'],
+      ['Sirve para tomar decisiones de promoción o acreditación.','Sumativa'],
+      ['Ejemplo: una prueba estandarizada externa.','Sumativa']
+    ], ['Formativa','Sumativa'], api, () => api.pass(), true);
+  }
+},
+/* 5 */ {
+  g:'oraculo', title:'La Escalera del Oráculo',
+  intro:'«Una retroalimentación que transforma se sube peldaño a peldaño. Enciende las runas en el orden correcto y luego dime a qué peldaño pertenece cada voz… cuidado: algunas voces no son retroalimentación, son juicios.»',
+  hint:'El orden es: Clarificar → Valorar → Expresar inquietudes → Sugerir. Clarificar pide al estudiante explicar; Expresar inquietudes cuestiona una decisión para que él mismo reflexione; Sugerir propone un camino concreto.',
+  clue:'Letras ocultas en la escalera: O · T · C · E · N · R · I · M · I · C · E. Ordénalas para completar el lema: «Menos juicios, más preguntas. Menos correcciones, más …»',
+  render(box, api){
+    const STEPS = [['Clarificar','?'],['Valorar','✦'],['Expresar inquietudes','❖'],['Sugerir','✧']];
+    const A = h('div',{class:'part'}), B = h('div',{class:'part',hidden:true});
+    box.append(A,B);
+    let seq = 0;
+    const runes = h('div',{class:'runes'});
+    const fa = h('div',{class:'feedback',hidden:true});
+    function drawRunes(){
+      runes.innerHTML = ''; seq = 0;
+      shuffle(STEPS).forEach(([n,gl]) => {
+        const r = h('button',{class:'rune'}, h('span',{class:'glyph',text:gl}), h('span',{text:n}), h('span',{class:'ord'}));
+        r.addEventListener('click', () => {
+          if (r.classList.contains('lit')) return;
+          if (n === STEPS[seq][0]){ seq++; r.classList.add('lit'); r.querySelector('.ord').textContent = 'Peldaño ' + seq; Sfx.ok();
+            if (seq === 4){ feedback(fa,'ok','¡La escalera brilla completa!'); setTimeout(()=>{ A.hidden = true; B.hidden = false; }, 700); } }
+          else { feedback(fa,'bad','Esa runa no corresponde a este peldaño. Las runas se apagan.'); if (api.lose('Runa fuera de orden.')) drawRunes(); }
+        });
+        runes.append(r);
+      });
+    }
+    A.append(h('h3',{text:'Parte 1 · Enciende la escalera'}), h('p',{text:'Toca las runas en el orden en que se sube la escalera de la retroalimentación. Un error apaga todas las runas y cuesta una vida.'}), runes, fa);
+    drawRunes();
+    B.append(h('h3',{text:'Parte 2 · Las voces de la escalera'}), h('p',{text:'¿A qué peldaño pertenece cada frase? Dos de ellas no son retroalimentación sino juicios. Necesitas las 10 correctas.'}));
+    classify(B, [
+      ['«¿Puedes contarme con tus palabras qué buscaste lograr en esta parte?»','Clarificar'],
+      ['«¿Qué información usaste para desarrollar esta idea?»','Clarificar'],
+      ['«Me parece muy claro tu propósito y la organización de tus ideas.»','Valorar'],
+      ['«Usaste buenos ejemplos que fortalecen tu argumento.»','Valorar'],
+      ['«Me surge una duda: ¿por qué elegiste esta fuente y no otras más recientes?»','Expresar inquietudes'],
+      ['«¿Cómo crees que se fortalece tu conclusión con este punto?»','Expresar inquietudes'],
+      ['«Podrías comparar con otra perspectiva para dar más profundidad a tu análisis.»','Sugerir'],
+      ['«Te sugiero revisar la guía de citas para fortalecer tus referencias.»','Sugerir'],
+      ['«Esto está mal. Hazlo de nuevo.»','Juicio (no es retroalimentación)'],
+      ['«No entiendo nada de lo que escribiste.»','Juicio (no es retroalimentación)']
+    ], ['Clarificar','Valorar','Expresar inquietudes','Sugerir','Juicio (no es retroalimentación)'], api, () => api.pass());
+  }
+},
+/* 6 */ {
+  g:'golem', title:'La Cerradura Viviente',
+  intro:'«Soy la última puerta. Solo me abro con el código de cuatro runas y la palabra del lema. Todo lo que necesitas está escrito en tu Grimorio.»',
+  hint:'Cada pista del Grimorio da un dígito, en orden (1.º, 2.º, 3.º, 4.º). Repasa: emociones con vocal inicial, mitos desenmascarados, posición del engranaje y esencias formativas. La palabra tiene 11 letras.',
+  clue:null,
+  render(box, api){
+    const vals = [0,0,0,0];
+    const p = h('div',{class:'part'});
+    const lock = h('div',{class:'lock'});
+    const fb = h('div',{class:'feedback',hidden:true});
+    const word = h('input',{id:'final-word',autocomplete:'off',placeholder:'Escribe la palabra del lema'});
+    vals.forEach((_,i) => {
+      const d = h('div',{class:'d',text:'0'});
+      const set = n => { vals[i] = (n+10)%10; d.textContent = vals[i]; Sfx.click(); };
+      lock.append(h('div',{class:'dial'}, h('button',{'aria-label':`Subir runa ${i+1}`,onclick:()=>set(vals[i]+1)},'▲'), d, h('button',{'aria-label':`Bajar runa ${i+1}`,onclick:()=>set(vals[i]-1)},'▼')));
+    });
+    p.append(h('p',{text:'Gira las cuatro runas numéricas y escribe la palabra que completa el lema. Ambas deben ser correctas.'}),
+      h('div',{class:'row-actions'}, h('button',{class:'btn ghost small',onclick:()=>toggleGrimoire(true)},'Abrir Grimorio')),
+      lock, h('div',{class:'field'}, h('label',{for:'final-word',class:'label',text:'«Menos correcciones, más …»'}), word), fb,
+      h('div',{class:'row-actions'}, h('button',{class:'btn',onclick:check},'Abrir la cerradura')));
+    box.append(p);
+    function check(){
+      const codeOk = vals.join('') === '3536', wordOk = norm(word.value) === 'CRECIMIENTO';
+      if (codeOk && wordOk){ feedback(fb,'ok','La piedra cruje… ¡la cerradura cede!'); setTimeout(()=>api.pass(), 600); return; }
+      feedback(fb,'bad', `Runas numéricas: ${codeOk?'correctas':'incorrectas'} · Palabra: ${wordOk?'correcta':'incorrecta'}.`);
+      api.lose('La cerradura rechazó la combinación.');
+    }
+  }
+}
+];
+
+/* -------- componentes de reto reutilizables -------- */
+function feedback(box, kind, msg){
+  let fb = box.classList.contains('feedback') ? box : box.querySelector(':scope > .feedback.auto');
+  if (!fb){ fb = h('div',{class:'feedback auto'}); box.append(fb); }
+  fb.hidden = false; fb.classList.remove('ok','bad'); fb.classList.add(kind); fb.textContent = msg;
+}
+function classify(box, rows, options, api, onDone, seg2){
+  const answers = new Map();
+  const list = h('div',{class:'items'});
+  shuffle(rows).forEach(([text, right], idx) => {
+    const id = 'c' + Math.random().toString(36).slice(2,8);
+    let ctrl;
+    if (options.length <= 2){
+      ctrl = h('div',{class:'seg' + (seg2?' v':''),role:'group','aria-label':'Opciones'});
+      options.forEach(o => { const b = h('button',{'data-v':o[0],text:o}); b.addEventListener('click',()=>{ Sfx.click(); answers.set(id,o); ctrl.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); }); ctrl.append(b); });
+    } else {
+      ctrl = h('select',{id,'aria-label':'Elige una opción'}, h('option',{value:'',text:'— Elige —'}), options.map(o=>h('option',{value:o,text:o})));
+      ctrl.addEventListener('change',()=>{ Sfx.click(); answers.set(id, ctrl.value); });
+    }
+    list.append(h('div',{class:'item','data-id':id,'data-r':right}, h('p',{text:text}), ctrl));
+  });
+  const fb = h('div',{class:'feedback',hidden:true});
+  const btn = h('button',{class:'btn'},'Comprobar');
+  btn.addEventListener('click', () => {
+    const items = [...list.children];
+    const missing = items.filter(it => !answers.get(it.dataset.id)).length;
+    if (missing){ feedback(fb,'bad',`Te faltan ${missing} por responder.`); return; }
+    const good = items.filter(it => answers.get(it.dataset.id) === it.dataset.r).length;
+    if (good === items.length){ feedback(fb,'ok',`¡${good} de ${items.length}! Todo correcto.`); btn.disabled = true; setTimeout(onDone, 600); }
+    else { feedback(fb,'bad',`Acertaste ${good} de ${items.length}. Revisa y vuelve a intentarlo.`); api.lose('Respuesta incompleta.'); }
+  });
+  box.append(list, fb, h('div',{class:'row-actions'}, btn));
+}
+function mcq(box, qs, api, onDone){
+  const wrap = h('div',{class:'items'});
+  const groups = qs.map(([q, opts], qi) => {
+    const name = 'q' + qi + Math.random().toString(36).slice(2,6);
+    const g = h('fieldset',{class:'mcq'}, h('legend',{class:'label',text:'Pregunta ' + (qi+1)}), h('p',{style:'margin:0;font-weight:600',text:q}),
+      shuffle(opts).map(([t,ok],oi) => { const id = name+'-'+oi; return h('label',{for:id}, h('input',{type:'radio',name,id,value:ok,onchange:()=>Sfx.click()}), h('span',{text:t})); }));
+    wrap.append(g); return name;
+  });
+  const fb = h('div',{class:'feedback',hidden:true});
+  const btn = h('button',{class:'btn'},'Comprobar');
+  btn.addEventListener('click', () => {
+    const vals = groups.map(n => { const c = box.querySelector(`input[name="${n}"]:checked`); return c ? c.value : null; });
+    if (vals.includes(null)){ feedback(fb,'bad','Responde las tres preguntas.'); return; }
+    const good = vals.filter(v => v === '1').length;
+    if (good === qs.length){ feedback(fb,'ok','¡Mitos derribados!'); btn.disabled = true; setTimeout(onDone, 600); }
+    else { feedback(fb,'bad',`Acertaste ${good} de ${qs.length}.`); api.lose('Respuesta incorrecta.'); }
+  });
+  box.append(wrap, fb, h('div',{class:'row-actions'}, btn));
+}
+
+/* ---------------- pantallas ---------------- */
+const app = $('#app');
+function show(view){ S.view = view; app.innerHTML = ''; window.scrollTo(0,0); }
+
+function renderIntro(){
+  show('intro');
+  const err = h('div',{class:'err'});
+  const nombre = h('input',{id:'reg-nombre',maxlength:'60',autocomplete:'name',placeholder:'Ej.: Marta Rodríguez',value:S.nombre||''});
+  const grupo = h('input',{id:'reg-grupo',maxlength:'60',placeholder:'Ej.: Colegio San José · Grado 9B',value:S.grupo||''});
+  const start = h('button',{class:'btn',type:'submit'},'Entrar a la Torre');
+  const form = h('form',{class:'reg'},
+    h('h2',{style:'font-size:1.25rem;color:var(--gold2)',text:'Registro de expedicionarios'}),
+    h('div',{class:'field'}, h('label',{for:'reg-nombre',class:'label',text:'Nombre completo o del equipo'}), nombre),
+    h('div',{class:'field'}, h('label',{for:'reg-grupo',class:'label',text:'Institución, grado o grupo'}), grupo),
+    err, start,
+    h('p',{class:'note',text: API ? 'Tu puntaje quedará registrado en el panel docente.' : 'Modo de prueba: el registro compartido aún no está configurado, así que los puntajes solo se guardan en este dispositivo.'}));
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const n = nombre.value.trim(), g = grupo.value.trim();
+    if (n.length < 3){ err.textContent = 'Escribe un nombre de al menos 3 letras.'; nombre.focus(); return; }
+    if (!g){ err.textContent = 'Escribe tu institución, grado o grupo.'; grupo.focus(); return; }
+    S.nombre = n; S.grupo = g; S.restarts = 0; S.bestScore = 0;
+    S.docId = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+    saveRemote({ nombre:n, grupo:g, puntos:0, mejorPuntaje:0, retoActual:1, retosSuperados:0, reinicios:0, estado:'en curso', inicio:new Date().toISOString(), tiempoSeg:0, compromiso:'' });
+    Sfx.unlock(); startRun();
+  });
+  app.append(h('div',{class:'wrap screen'},
+    h('section',{class:'hero'},
+      h('div',{class:'screen',style:'gap:18px'},
+        h('h1',{class:'hero-title'}, h('span',{text:'Escape room · Evaluación para el aprendizaje'}), 'La Torre de la Evaluación'),
+        h('p',{class:'lore',text:'La Sombra del Juicio ha sellado la Torre. Allí dentro, evaluar se volvió sinónimo de calificar, nadie pregunta y nadie escucha. Seis guardianes custodian las llaves de la evaluación formativa. Tienes 30 minutos para superar sus pruebas, reunir las pistas del Grimorio y abrir la última cerradura.'}),
+        h('div',{class:'rules'},
+          h('div',{class:'rule'}, h('b',{text:'6 retos · 30 min'}), 'Definición, retroalimentación, mitos, proceso, sumativa vs. formativa, escalera y una cerradura final.'),
+          h('div',{class:'rule'}, h('b',{text:'3 vidas por reto'}), 'Si las pierdes todas, o se acaba el tiempo, vuelves a empezar desde el primer reto.'),
+          h('div',{class:'rule'}, h('b',{text:'Puntos'}), '1000 por reto, −200 por vida perdida, −100 por pista. Bono por tiempo sobrante.')),
+        form),
+      h('div',{class:'screen',style:'gap:18px'},
+        h('figure',{class:'portal',style:'margin:0'}, h('img',{src:IMG.tiempo,alt:'Guardián encapuchado con un reloj de arena'}),
+          h('figcaption',{class:'cap'}, h('b',{style:'font-family:var(--f-head);color:var(--gold2)',text:'Cronos, Guardián del Reloj'}), h('br'), '«Cada grano de arena es un segundo de aprendizaje. No los desperdicies.»')),
+        h('div',{class:'board',id:'board'}))),
+    h('div',{class:'foot'},
+      h('span',{class:'note',text:'Activa el sonido de tu dispositivo: la Torre tiene voz propia.'}),
+      h('button',{class:'btn ghost small',onclick:renderTeacherLogin},'Acceso docente'))));
+  renderBoard();
+}
+
+function renderBoard(){
+  const b = $('#board'); if (!b) return;
+  b.innerHTML = '';
+  b.append(h('div',{class:'label',text:'Salón de los Valientes'}));
+  const top = players.slice().sort((a,c)=>(c.mejorPuntaje||0)-(a.mejorPuntaje||0) || (a.tiempoSeg||1e9)-(c.tiempoSeg||1e9)).filter(p=>(p.mejorPuntaje||0)>0).slice(0,8);
+  if (!top.length){ b.append(h('p',{class:'note',text:'Aún nadie ha escapado de la Torre. El primer nombre que aparezca aquí puede ser el tuyo.'})); return; }
+  b.append(h('ol',{}, top.map((p,i)=>h('li',{}, h('span',{class:'n',text:i+1}), h('span',{class:'who'}, p.nombre||'—', ' ', h('small',{text:'· '+(p.grupo||'')})), h('b',{text:(p.mejorPuntaje||0).toLocaleString('es-CO')})))));
+}
+
+/* -------- partida -------- */
+function startRun(){
+  S.running = true; S.reto = 0; S.score = 0; S.clues = []; S.runStart = Date.now();
+  clearInterval(S.timer); S.timer = setInterval(tickTimer, 1000);
+  Sfx.startDrone();
+  renderReto();
+}
+function elapsed(){ return (Date.now() - S.runStart)/1000; }
+function tickTimer(){
+  const left = TOTAL_SEC - elapsed();
+  const t = $('#hud-time'); if (t){ t.textContent = fmtTime(left); t.parentElement.classList.toggle('low', left <= 120); }
+  if (left <= 60 && left > 0) Sfx.tick();
+  if (left <= 0){ gameOver('Se agotó el tiempo de la expedición.'); }
+}
+function renderHud(){
+  const hearts = h('div',{class:'hearts','aria-label':`${S.lives} vidas`}, Array.from({length:MAX_LIVES},(_,i)=>h('span',{class:'heart'+(i<S.lives?'':' off')})));
+  const muteBtn = h('button',{class:'iconbtn',onclick:()=>{ const m = Sfx.toggle(); muteBtn.textContent = m ? 'Sonido: no' : 'Sonido: sí'; }}, Sfx.muted ? 'Sonido: no' : 'Sonido: sí');
+  return h('header',{class:'hud'}, h('div',{class:'hud-in'},
+    h('div',{class:'stat'}, h('span',{class:'label',text:'Expedicionario'}), h('b',{text:S.nombre})),
+    h('div',{class:'stat'}, h('span',{class:'label',text:`Reto ${S.reto+1} de ${RETOS.length}`}), h('div',{class:'steps'}, RETOS.map((_,i)=>h('i',{class:i<S.reto?'done':i===S.reto?'now':''})))),
+    h('div',{class:'stat'}, h('span',{class:'label',text:'Vidas'}), hearts),
+    h('div',{class:'stat'}, h('span',{class:'label',text:'Puntos'}), h('b',{id:'hud-score',text:S.score.toLocaleString('es-CO')})),
+    h('div',{class:'stat timer'+(TOTAL_SEC-elapsed()<=120?' low':'')}, h('span',{class:'label',text:'Tiempo'}), h('b',{id:'hud-time',text:fmtTime(TOTAL_SEC-elapsed())})),
+    h('span',{class:'sp'}),
+    h('button',{class:'iconbtn',onclick:()=>toggleGrimoire()}, `Grimorio (${S.clues.length})`),
+    muteBtn));
+}
+function refreshHearts(){
+  const hs = document.querySelectorAll('.hud .heart'); hs.forEach((x,i)=>x.classList.toggle('off', i >= S.lives));
+}
+function renderReto(){
+  show('game');
+  const R = RETOS[S.reto], G = GUARD[R.g];
+  S.lives = MAX_LIVES; S.livesLost = 0; S.hintUsed = false;
+  const hintBox = h('div',{class:'hintbox',hidden:true,text:R.hint});
+  const hintBtn = h('button',{class:'btn ghost small'},'Pedir pista al guardián (−100)');
+  hintBtn.addEventListener('click',()=>{ if (S.hintUsed) return; S.hintUsed = true; hintBox.hidden = false; hintBtn.disabled = true; Sfx.click(); });
+  const stage = h('section',{class:'stage'},
+    h('div',{class:'label',text:`Reto ${S.reto+1}`}), h('h2',{text:R.title}),
+    h('div',{class:'row-actions'}, hintBtn), hintBox);
+  const box = h('div',{class:'screen',style:'gap:18px'});
+  stage.append(box);
+  app.append(renderHud(), h('div',{class:'wrap'}, h('div',{class:'scene'},
+    h('aside',{class:'guard'}, h('img',{src:IMG[G.img],alt:G.name}), h('div',{class:'gtxt'}, h('h3',{text:G.name}), h('p',{class:'speech',text:R.intro}))),
+    stage)));
+  const api = {
+    lose(reason){ return loseLife(reason, stage); },
+    pass(){ passReto(); }
+  };
+  R.render(box, api);
+  saveRemote({ retoActual: S.reto+1, puntos: S.score });
+}
+function loseLife(reason, stage){
+  if (!S.running) return false;
+  S.lives--; S.livesLost++;
+  Sfx.bad(); refreshHearts();
+  if (stage){ stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
+  if (S.lives <= 0){ setTimeout(()=>gameOver(reason + ' Perdiste tus tres vidas en este reto.'), 700); return false; }
+  return true;
+}
+function passReto(){
+  if (!S.running) return;
+  const R = RETOS[S.reto];
+  const pts = Math.max(300, 1000 - 200*S.livesLost - (S.hintUsed?100:0));
+  S.score += pts;
+  if (R.clue) S.clues.push(R.clue);
+  Sfx.unlock();
+  const last = S.reto === RETOS.length - 1;
+  saveRemote({ puntos: S.score, retosSuperados: S.reto+1, retoActual: Math.min(S.reto+2, RETOS.length) });
+  const ov = h('div',{class:'overlay',role:'dialog','aria-modal':'true'}, h('div',{class:'modal'},
+    h('img',{src:IMG[GUARD[R.g].img],alt:''}),
+    h('div',{class:'label',text:'Reto superado'}),
+    h('h2',{text:R.title}),
+    h('p',{text:`+${pts} puntos${S.livesLost?` (perdiste ${S.livesLost} ${S.livesLost===1?'vida':'vidas'})`:''}${S.hintUsed?' · usaste la pista':''}.`}),
+    R.clue ? h('div',{class:'clue'}, h('div',{class:'label',text:'Nueva página del Grimorio'}), h('p',{style:'margin:6px 0 0',text:R.clue})) : null,
+    h('button',{class:'btn',onclick:()=>{ ov.remove(); if (last) finish(); else { S.reto++; renderReto(); } }}, last ? 'Cruzar la puerta' : 'Subir al siguiente piso')));
+  document.body.append(ov);
+  ov.querySelector('.btn').focus();
+}
+function gameOver(reason){
+  if (!S.running) return;
+  S.running = false; clearInterval(S.timer); Sfx.stopDrone(); Sfx.gameover();
+  document.querySelectorAll('.overlay,.grimoire').forEach(x=>x.remove());
+  S.restarts++;
+  saveRemote({ reinicios: S.restarts, puntos: 0, retoActual: 1, estado: 'reiniciando' });
+  show('over');
+  app.append(h('div',{class:'wrap'}, h('div',{class:'win'},
+    h('img',{src:IMG.sombra,alt:'La Sombra del Juicio',style:'width:220px;border-radius:10px;border:1px solid var(--line)'}),
+    h('div',{class:'label',text:'La Sombra del Juicio te alcanzó'}),
+    h('h2',{style:'font-size:1.8rem;color:var(--bad)',text:'¡Debes volver a empezar!'}),
+    h('p',{text:reason}),
+    h('p',{class:'quote',text:'«En mi torre el error es castigo… demuéstrame que para ti el error es una oportunidad de aprender.»'}),
+    h('p',{class:'note',text:`Llegaste al reto ${S.reto+1} con ${S.score.toLocaleString('es-CO')} puntos. Reinicios: ${S.restarts}. La nueva expedición vuelve a tener 30 minutos.`}),
+    h('button',{class:'btn',onclick:()=>{ saveRemote({ estado:'en curso' }); startRun(); }},'Volver a empezar desde el reto 1'))));
+}
+function toggleGrimoire(force){
+  const ex = document.querySelector('.grimoire');
+  if (ex && force !== true){ ex.remove(); return; }
+  if (ex) return;
+  Sfx.flip();
+  document.body.append(h('aside',{class:'grimoire','aria-label':'Grimorio'},
+    h('div',{style:'display:flex;justify-content:space-between;align-items:center;gap:10px'}, h('h3',{style:'color:var(--gold2)',text:'Grimorio de pistas'}), h('button',{class:'iconbtn',onclick:()=>toggleGrimoire()},'Cerrar')),
+    S.clues.length ? h('ol',{}, S.clues.map(c=>h('li',{text:c}))) : h('p',{class:'note',text:'Vacío. Cada reto superado te dará una página.'})));
+}
+
+/* -------- victoria y recompensa -------- */
+function finish(){
+  S.running = false; clearInterval(S.timer); Sfx.stopDrone();
+  const used = elapsed(); S.finalSec = Math.round(used);
+  const bonus = Math.max(0, Math.round((TOTAL_SEC - used)/2));
+  S.lastScore = S.score + bonus;
+  S.bestScore = Math.max(S.bestScore, S.lastScore);
+  saveRemote({ puntos: S.lastScore, mejorPuntaje: S.bestScore, retosSuperados: RETOS.length, estado:'completado', tiempoSeg: S.finalSec, bonoTiempo: bonus, fin: new Date().toISOString() });
+  show('commit');
+  const ta = h('textarea',{id:'commit',maxlength:'280',placeholder:'Desde hoy evaluaré para que mis estudiantes crezcan, no para que teman.'});
+  const err = h('div',{class:'err'});
+  app.append(h('div',{class:'wrap'}, h('div',{class:'win'},
+    h('img',{src:IMG.golem,alt:'Petra, la Cerradura Viviente',style:'width:180px;border-radius:10px;border:1px solid var(--line)'}),
+    h('div',{class:'label',text:'La puerta se abre…'}),
+    h('h2',{style:'font-size:1.6rem;color:var(--gold2)',text:'Último sello: tu compromiso'}),
+    h('p',{style:'max-width:56ch',text:'«Para reclamar la recompensa, deja escrita en la piedra una frase que resuma cómo quieres transformar tu forma de evaluar.»'}),
+    h('div',{class:'field',style:'width:100%;max-width:560px;text-align:left'}, h('label',{for:'commit',class:'label',text:'Mi compromiso'}), ta, err),
+    h('button',{class:'btn',onclick:()=>{ const v = ta.value.trim(); if (v.length < 15){ err.textContent = 'Escribe una frase de al menos 15 caracteres.'; ta.focus(); return; } saveRemote({ compromiso: v }); renderReward(v); }},'Sellar compromiso y reclamar recompensa'))));
+}
+function renderReward(phrase){
+  show('win'); Sfx.win();
+  const tier = S.lastScore >= 6200 ? ['Archimago de la Evaluación Formativa','Superaste la Torre casi sin tropiezos.'] : S.lastScore >= 5000 ? ['Maestro/a de la Retroalimentación','Dominas la escalera y sabes desmontar mitos.'] : ['Aprendiz Valiente','Escapaste: el error fue parte de tu camino.'];
+  const rank = players.slice().sort((a,c)=>(c.mejorPuntaje||0)-(a.mejorPuntaje||0)).findIndex(p=>p.id===S.docId);
+  app.append(h('div',{class:'wrap'}, h('div',{class:'win'},
+    h('div',{class:'label',text:'Recompensa obtenida'}),
+    h('div',{class:'seal'}, 'Llave Dorada', h('br'), 'de la', h('br'), 'Evaluación'),
+    h('h2',{style:'font-family:var(--f-title);font-size:clamp(1.5rem,4vw,2.3rem);color:var(--gold2)',text:tier[0]}),
+    h('p',{text:`${S.nombre} · ${S.grupo}. ${tier[1]}`}),
+    h('div',{class:'tiles'},
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Puntaje final'}), h('b',{text:S.lastScore.toLocaleString('es-CO')})),
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Tiempo'}), h('b',{text:fmtTime(S.finalSec)})),
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Reinicios'}), h('b',{text:S.restarts})),
+      rank >= 0 ? h('div',{class:'tile'}, h('span',{class:'label',text:'Puesto en el salón'}), h('b',{text:'#'+(rank+1)})) : null),
+    h('p',{class:'quote',text:'«'+phrase+'»'}),
+    h('p',{style:'font-family:var(--f-head);color:var(--teal)',text:'Menos juicios, más preguntas. Menos correcciones, más crecimiento.'}),
+    h('div',{class:'row-actions',style:'justify-content:center'},
+      h('button',{class:'btn ghost',onclick:()=>{ S.docId = null; S.nombre=''; S.grupo=''; renderIntro(); }},'Registrar otro participante')))));
+  confetti();
+}
+function confetti(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const c = $('#confetti'); c.hidden = false; const x = c.getContext('2d');
+  c.width = innerWidth; c.height = innerHeight;
+  const cols = ['#f3d998','#d6b36a','#9d7bff','#5fd4cf','#ff8fa3'];
+  const ps = Array.from({length:180},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height,r:4+Math.random()*6,vy:2+Math.random()*3,vx:-1+Math.random()*2,a:Math.random()*6,c:cols[Math.floor(Math.random()*cols.length)]}));
+  const t0 = performance.now();
+  (function f(t){
+    x.clearRect(0,0,c.width,c.height);
+    ps.forEach(p=>{ p.y+=p.vy; p.x+=p.vx+Math.sin(p.a+=.05); x.fillStyle=p.c; x.save(); x.translate(p.x,p.y); x.rotate(p.a); x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); x.restore(); });
+    if (t - t0 < 6000) requestAnimationFrame(f); else { x.clearRect(0,0,c.width,c.height); c.hidden = true; }
+  })(t0);
+}
+
+/* ---------------- versión docente ---------------- */
+function renderTeacherLogin(){
+  show('teacherLogin');
+  const pw = h('input',{id:'t-pass',type:'password',autocomplete:'off'});
+  const err = h('div',{class:'err'});
+  const form = h('form',{class:'reg',style:'max-width:440px;margin:0 auto'},
+    h('img',{src:IMG.cronista,alt:'La Cronista',style:'width:150px;border-radius:8px;justify-self:center'}),
+    h('h2',{style:'font-size:1.3rem;color:var(--gold2);text-align:center',text:'Archivo de la Cronista'}),
+    h('p',{class:'note',style:'text-align:center',text:'Acceso exclusivo para docentes.'}),
+    h('div',{class:'field'}, h('label',{for:'t-pass',class:'label',text:'Contraseña'}), pw), err,
+    h('button',{class:'btn',type:'submit'},'Entrar al panel'),
+    h('button',{class:'btn ghost small',type:'button',onclick:renderIntro},'Volver'));
+  form.addEventListener('submit', e => { e.preventDefault(); if (pw.value === PASS){ S.teacherOk = true; S.teacherKey = pw.value; loadPlayers(); Sfx.unlock(); renderTeacher(); } else { err.textContent = 'Contraseña incorrecta.'; Sfx.bad(); pw.select(); } });
+  app.append(h('div',{class:'wrap'}, form));
+  pw.focus();
+}
+const COLS = [['nombre','Participante'],['grupo','Grupo'],['puntos','Puntos actuales'],['mejorPuntaje','Mejor puntaje'],['retosSuperados','Retos'],['reinicios','Reinicios'],['tiempoSeg','Tiempo final'],['estado','Estado'],['compromiso','Compromiso'],['actualizado','Última actividad']];
+function renderTeacher(){
+  const keepScroll = S.view === 'teacher' ? window.scrollY : 0;
+  show('teacher');
+  const q = (S.filter||'').toLowerCase();
+  const rows = players.filter(p => !q || (p.nombre+' '+p.grupo).toLowerCase().includes(q))
+    .sort((a,b)=>{ const k=S.sort.k, va=a[k]??'', vb=b[k]??''; return (typeof va==='number'&&typeof vb==='number' ? va-vb : String(va).localeCompare(String(vb),'es')) * S.sort.dir; });
+  const done = players.filter(p=>p.estado==='completado');
+  const avg = done.length ? Math.round(done.reduce((s,p)=>s+(p.mejorPuntaje||0),0)/done.length) : 0;
+  const avgT = done.length ? done.reduce((s,p)=>s+(p.tiempoSeg||0),0)/done.length : 0;
+  const filter = h('input',{id:'t-filter',placeholder:'Buscar por nombre o grupo',value:S.filter||'',style:'max-width:320px'});
+  filter.addEventListener('input',()=>{ S.filter = filter.value; clearTimeout(S.ft); S.ft = setTimeout(()=>{ renderTeacher(); const f=$('#t-filter'); f.focus(); f.setSelectionRange(f.value.length,f.value.length); },250); });
+  const stateLabel = p => p.estado==='completado' ? h('span',{class:'pill done',text:'Completó'}) : p.estado==='reiniciando' ? h('span',{class:'pill reset',text:'Reiniciando'}) : h('span',{class:'pill run',text:'En curso'});
+  const table = h('table',{},
+    h('thead',{}, h('tr',{}, COLS.map(([k,l])=>h('th',{}, h('button',{onclick:()=>{ S.sort = { k, dir: S.sort.k===k ? -S.sort.dir : (typeof (players[0]||{})[k]==='number' ? -1 : 1) }; renderTeacher(); }}, l + (S.sort.k===k ? (S.sort.dir<0?' ↓':' ↑') : '')))), h('th',{text:''}))),
+    h('tbody',{}, rows.length ? rows.map(p => {
+      const del = h('button',{class:'btn danger small'},'Borrar');
+      del.addEventListener('click',()=>{
+        S.confirming = true;
+        const cell = del.parentElement; cell.innerHTML = '';
+        cell.append(h('span',{class:'note',text:'¿Seguro? '}), h('button',{class:'btn danger small',onclick:async()=>{ cell.textContent = 'Borrando…'; try{ await deletePlayer(p.id); }catch(e){ cell.textContent = 'No se pudo borrar.'; } S.confirming = false; renderTeacher(); }},'Sí'), ' ', h('button',{class:'btn ghost small',onclick:()=>{ S.confirming = false; renderTeacher(); }},'No'));
+      });
+      return h('tr',{},
+        h('td',{text:p.nombre||'—'}), h('td',{text:p.grupo||'—'}),
+        h('td',{class:'num',text:(p.puntos||0).toLocaleString('es-CO')}), h('td',{class:'num'}, h('b',{text:(p.mejorPuntaje||0).toLocaleString('es-CO')})),
+        h('td',{class:'num',text:`${p.retosSuperados||0}/6`}), h('td',{class:'num',text:p.reinicios||0}),
+        h('td',{class:'num',text:p.tiempoSeg?fmtTime(p.tiempoSeg):'—'}), h('td',{}, stateLabel(p)),
+        h('td',{}, p.compromiso ? h('span',{class:'quote',text:'«'+p.compromiso+'»'}) : h('span',{class:'note',text:'—'})),
+        h('td',{class:'note',text:p.actualizado?new Date(p.actualizado).toLocaleString('es-CO',{dateStyle:'short',timeStyle:'short'}):'—'}),
+        h('td',{}, del));
+    }) : h('tr',{}, h('td',{colspan:COLS.length+1,class:'note',text: API ? 'Todavía no hay participantes registrados. La tabla se actualiza cada 10 segundos.' : 'Modo de prueba: solo se ven los participantes de este dispositivo. Configura config.js para ver a todos.'}))));
+  const csvBtn = h('button',{class:'btn ghost small',onclick:exportCsv},'Descargar CSV');
+  app.append(h('div',{class:'wrap screen'},
+    h('div',{class:'foot',style:'border:0;padding:0'},
+      h('div',{}, h('div',{class:'label',text:'Versión docente'}), h('h1',{style:'font-size:clamp(1.5rem,3vw,2.2rem);color:var(--gold2)',text:'Archivo de la Cronista'})),
+      h('div',{class:'row-actions'}, csvBtn, h('button',{class:'btn ghost small',onclick:()=>{ S.teacherOk = false; renderIntro(); }},'Cerrar sesión docente'))),
+    h('div',{class:'tiles'},
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Participantes'}), h('b',{text:players.length})),
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Escaparon'}), h('b',{text:done.length})),
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Puntaje promedio (escaparon)'}), h('b',{text:avg.toLocaleString('es-CO')})),
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Tiempo promedio'}), h('b',{text:done.length?fmtTime(avgT):'—'})),
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Reinicios totales'}), h('b',{text:players.reduce((s,p)=>s+(p.reinicios||0),0)}))),
+    h('div',{class:'row-actions'}, filter, h('span',{class:'note',text:'Se actualiza cada 10 segundos. Toca un encabezado para ordenar.'}), h('button',{class:'btn ghost small',onclick:loadPlayers},'Actualizar ahora')),
+    h('div',{class:'tablewrap'}, table)));
+  window.scrollTo(0, keepScroll);
+}
+async function exportCsv(){
+  const esc = v => '"' + String(v??'').replace(/"/g,'""') + '"';
+  const head = ['Participante','Grupo','Puntos actuales','Mejor puntaje','Retos superados','Reinicios','Tiempo final (mm:ss)','Estado','Compromiso','Inicio','Última actividad'];
+  const lines = [head.map(esc).join(';')].concat(players.map(p=>[p.nombre,p.grupo,p.puntos||0,p.mejorPuntaje||0,p.retosSuperados||0,p.reinicios||0,p.tiempoSeg?fmtTime(p.tiempoSeg):'',p.estado,p.compromiso,p.inicio,p.actualizado].map(esc).join(';')));
+  const url = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' }));
+  const a = h('a',{href:url,download:'torre-evaluacion-resultados.csv'}); document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+
+renderIntro();
+</script>
+</body>
+</html>

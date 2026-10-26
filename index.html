@@ -540,7 +540,7 @@ const RETOS = [
 }
 ];
 
-/* -------- componentes de reto reutilizables -------- */
+/* -------- componentes de reto reutilizables  -------- */
 function feedback(box, kind, msg){
   let fb = box.classList.contains('feedback') ? box : box.querySelector(':scope > .feedback.auto');
   if (!fb){ fb = h('div',{class:'feedback auto'}); box.append(fb); }

@@ -1,6 +1,17 @@
 # La Torre de la Evaluación · Escape room
 
-Escape room interactivo (30 min, 6 retos) sobre **Evaluación para el aprendizaje**: definición y virtudes de la retroalimentación, mitos y verdades, proceso de evaluación, formativa vs. sumativa, escalera de la retroalimentación y una cerradura final. Incluye sonidos, 3 vidas por reto (si se pierden, se vuelve a empezar), registro de participantes con puntaje y una **versión docente** con contraseña.
+Escape room interactivo (30 minutos) sobre **Evaluación para el aprendizaje**. Los participantes suben una torre de **seis pisos**. Los retos se diseñaron siguiendo la taxonomía de Bloom, pero eso **no se muestra a los participantes**; solo aparece en el solucionario del orientador.
+
+| Piso | Reto | Diseñado para (Bloom) |
+|---|---|---|
+| 1 | El Pergamino de la Memoria: definición y los tres sellos de la retroalimentación | Recordar |
+| 2 | La Guarida de los Mitos: mitos y verdades de la evaluación | Comprender |
+| 3 | La Máquina del Proceso: ordenar el proceso y aplicarlo a un caso de aula | Aplicar |
+| 4 | El Laboratorio de las Esencias: formativa vs. sumativa y análisis de comentarios | Analizar |
+| 5 | Los Dados del Oráculo: la escalera de la retroalimentación jugada con dados | Evaluar |
+| 6 | La Cerradura Viviente: código, palabra clave y una retroalimentación completa | Crear |
+
+Incluye: repaso inicial de los temas con cada guardián, sonidos, 5 vidas por piso (si se pierden, se vuelve a empezar), vidas extra (las runas del piso 5 y las que envía el coach), felicitación con puntos y dado de la fortuna en cada piso, una sílaba por piso para armar la palabra clave, Top 5 siempre visible, **versión docente** con contraseña y un **bonus final**: una Escalera de la Retroalimentación práctica para llevar al aula.
 
 Los participantes **no necesitan crear ninguna cuenta**: solo abren el enlace.
 
@@ -42,11 +53,16 @@ window.TORRE_CONFIG = {
 3. **Settings → Pages** → *Source*: **Deploy from a branch** → *Branch*: `main` / `(root)` → **Save**.
 4. En uno o dos minutos tu juego estará en `https://TU-USUARIO.github.io/torre-evaluacion/`.
 
+### Si ya tenías publicada la versión anterior
+
+1. Reemplaza `index.html` y sube la carpeta `img` completa. `config.js` sigue igual.
+2. **Actualiza el script de Google** (necesario para el botón «+1 vida» y la columna de vidas): en la hoja, *Extensiones → Apps Script*, reemplaza el código por el nuevo `Code.gs`, guarda y ve a *Implementar → Gestionar implementaciones → editar (lápiz) → Versión: Nueva versión → Implementar*. La URL no cambia.
+
 ## Uso
 
-- **Participantes:** abren el enlace, se registran con nombre y grupo y juegan.
-- **Docente:** botón *Acceso docente* (abajo en la portada), contraseña `santillana2026`. Ve la tabla con puntajes, retos, reinicios, tiempo y compromisos; se actualiza cada 10 segundos y se puede descargar en CSV. Los datos también quedan en la hoja de Google.
-- **Respuestas de la cerradura final:** código **3536**, palabra **CRECIMIENTO**.
+- **Participantes:** abren el enlace, se registran con nombre y grupo y juegan. Si recargan la página por accidente, en la portada aparece **«Continuar expedición»**.
+- **Docente:** botón *Acceso docente* (abajo en la portada), contraseña `santillana2026`. Ve el progreso de cada persona (piso actual y vidas), puntajes, reinicios, tiempo y compromisos, y puede enviar un corazón extra con **+1 vida** (llega en unos 10 segundos); se actualiza cada 10 segundos y se puede descargar en CSV. Los datos también quedan en la hoja de Google.
+- **Respuestas de la cerradura final:** código **3536**, palabra clave **APRENDIZAJE** (A · PREN · DI · ZA · JE).
 
 ## Notas
 

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Alegreya:ital,wght@0,400;0,600;0,700;1,400&display=swap">
 <style>
-/* Layout: una torre oscura; HUD fijo arriba, guardián a la izquierda y reto a la derecha (se apilan en móvil). Tema único oscuro, a propósito. */
+/* Layout: una torre oscura que se sube piso a piso. HUD fijo arriba, guardián a la izquierda y reto a la derecha; se apilan en móvil. Tema único oscuro, a propósito. */
 :root{
   --bg:#0c0b12; --bg2:#13111c; --panel:#1a1726; --panel2:#221e31; --line:#3a3350;
   --fg:#ebe4d6; --muted:#a49cb5; --gold:#d6b36a; --gold2:#f3d998; --violet:#9d7bff; --teal:#5fd4cf;
@@ -17,14 +17,18 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
 html,body{min-height:100%}
 body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#2a1f45 0%,transparent 60%),radial-gradient(900px 500px at 0% 110%,#1d2a33 0%,transparent 60%),var(--bg);background-attachment:fixed;color:var(--fg);font:18px/1.55 var(--f-body)}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+#embers{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.7}
+#app{position:relative;z-index:1}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
-h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;font-weight:700;letter-spacing:.02em}
-.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+h1,h2,h3{font-family:var(--f-head);text-wrap:balance;overflow-wrap:break-word;margin:0;font-weight:700;letter-spacing:.02em}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
 .screen{display:grid;gap:24px}
 .label{font-family:var(--f-head);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--gold);background:linear-gradient(180deg,#3b2f17,#241c0e);color:var(--gold2);font-family:var(--f-head);font-weight:700;letter-spacing:.06em;padding:12px 22px;border-radius:6px;transition:transform .12s,box-shadow .2s}
@@ -39,69 +43,92 @@ h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;font-weight:700;le
 .note{font-size:.88rem;color:var(--muted)}
 .err{color:var(--bad);font-size:.92rem;min-height:1.3em}
 
-/* ---------- Intro ---------- */
+/* ---------- Portada ---------- */
 .hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:28px;align-items:start}
 .hero-title{font-family:var(--f-title);font-weight:900;font-size:clamp(2.1rem,5.4vw,3.9rem);line-height:1.05;color:var(--gold2);text-shadow:0 0 28px rgba(157,123,255,.35)}
 .hero-title span{display:block;font-size:.42em;letter-spacing:.32em;color:var(--violet);font-family:var(--f-head);margin-bottom:10px;text-shadow:none}
 .lore{max-width:62ch;color:#d9d1c2}
-.portal{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg2)}
-.portal img{display:block;width:100%;height:auto}
-.portal .cap{position:absolute;inset:auto 0 0;padding:14px 16px;background:linear-gradient(transparent,rgba(8,7,12,.92));font-size:.92rem}
+.portal{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg2);display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr)}
+.portal img{display:block;width:100%;height:100%;object-fit:cover}
+.portal .cap{padding:14px 16px;font-size:.95rem;align-self:center}
 .reg{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;display:grid;gap:14px}
+.resume{border:1px solid var(--teal);border-radius:10px;padding:14px 16px;background:rgba(95,212,207,.07);display:grid;gap:10px}
 .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .rule{border-top:1px solid var(--line);padding-top:10px;font-size:.95rem}
 .rule b{display:block;font-family:var(--f-head);color:var(--gold);font-size:.82rem;letter-spacing:.08em}
 .board{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
 .board ol{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
-.board li{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto;gap:10px;align-items:baseline;border-bottom:1px dashed var(--line);padding:4px 0;font-variant-numeric:tabular-nums}
+.board li{display:grid;grid-template-columns:1.6em minmax(0,1fr) auto auto;gap:10px;align-items:baseline;border-bottom:1px dashed var(--line);padding:4px 0;font-variant-numeric:tabular-nums}
 .board li .n{font-family:var(--f-head);color:var(--gold)}
 .board li .who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .board li .who small{color:var(--muted)}
 .foot{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:16px}
 
+/* (sin torre) */
+
 /* ---------- HUD ---------- */
-.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(12,11,18,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-.hud-in{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(12,11,18,.93);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hud-in{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;display:flex;gap:8px 20px;align-items:center}
+.hud .who{min-width:0;flex:0 1 220px}
+.hud .who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hud-extra{display:flex;gap:8px 14px;align-items:center;flex:1;min-width:0}
+.hud2{display:none}
+.iconbtn{white-space:nowrap}
 .hud .stat{display:grid;line-height:1.15}
 .hud .stat b{font-family:var(--f-head);font-size:1.05rem;font-variant-numeric:tabular-nums}
 .hud .timer b{font-size:1.35rem;color:var(--teal)}
 .hud .timer.low b{color:var(--bad);animation:pulse 1s infinite}
-.hearts{display:flex;gap:4px}
+.hearts{display:flex;gap:4px;padding-top:3px}
 .heart{width:20px;height:18px;position:relative}
 .heart::before,.heart::after{content:"";position:absolute;top:0;width:10px;height:16px;border-radius:10px 10px 0 0;background:var(--bad)}
 .heart::before{left:10px;transform:rotate(-45deg);transform-origin:0 100%}
 .heart::after{left:0;transform:rotate(45deg);transform-origin:100% 100%}
 .heart.off::before,.heart.off::after{background:#3a3248}
-.steps{display:flex;gap:5px}
+.steps{display:flex;gap:5px;padding-top:6px}
 .steps i{width:22px;height:6px;border-radius:3px;background:#2b2540}
 .steps i.done{background:var(--gold)}
 .steps i.now{background:var(--violet);box-shadow:0 0 8px var(--violet)}
-.hud .sp{flex:1}
+.sp{flex:1}
 .iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:7px 11px;font-family:var(--f-head);font-size:.8rem}
+.syls{display:flex;gap:5px;flex-wrap:wrap;padding-top:2px}
+.syl{font-family:var(--f-title);font-weight:900;font-size:.82rem;padding:3px 8px;border-radius:5px;border:1px solid var(--gold);color:#2b1f08;background:linear-gradient(180deg,#f3d998,#c9a04f)}
+.syl.empty{background:transparent;border:1px dashed var(--line);color:var(--muted)}
 
 /* ---------- Escena ---------- */
-.scene{display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:start}
-.guard{position:sticky;top:90px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.guard img{display:block;width:100%;height:auto;aspect-ratio:300/422;object-fit:cover}
+.scene{display:grid;grid-template-columns:clamp(210px,24vw,300px) minmax(0,1fr);gap:24px;align-items:start}
+.side{position:sticky;top:96px;display:grid;gap:16px}
+.board.mini{padding:14px 16px;font-size:.92rem}
+.board li .t{color:var(--muted);font-size:.85em}
+.guard{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.guard img{display:block;width:100%;height:auto;aspect-ratio:300/380;object-fit:cover;object-position:top}
 .guard .gtxt{padding:14px 16px 18px;display:grid;gap:8px}
 .guard h3{color:var(--gold2);font-size:1.05rem}
-.speech{font-style:italic;color:#d8d0e6;font-size:.98rem}
+.speech{font-style:italic;color:#d8d0e6;font-size:.98rem;margin:0}
 .stage{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;display:grid;gap:18px;min-width:0}
 .stage h2{font-size:clamp(1.3rem,2.6vw,1.75rem);color:var(--gold2)}
+.floor{display:inline-flex;gap:8px;align-items:center;font-family:var(--f-head);font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);border:1px solid #2d4a50;border-radius:999px;padding:3px 12px;justify-self:start}
 .part{display:grid;gap:14px}
+.part p{margin:0}
 .feedback{padding:10px 14px;border-radius:6px;border:1px solid var(--line);background:var(--bg2);font-size:.98rem}
 .feedback.ok{border-color:var(--ok);color:var(--ok)}
 .feedback.bad{border-color:var(--bad);color:#ffb3b3}
 .row-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .hintbox{border-left:3px solid var(--violet);padding:8px 12px;background:rgba(157,123,255,.08);font-size:.95rem}
+.casebox{border:1px solid #2d4a50;border-radius:8px;padding:12px 14px;background:rgba(95,212,207,.06)}
 .shake{animation:shake .45s}
 @keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 @keyframes pulse{50%{opacity:.45}}
+@keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 
 /* pergamino */
 .scroll{margin:0;background:linear-gradient(180deg,#f3e6c4,#e8d6a8);color:#2b2112;border-radius:6px;padding:20px 22px;line-height:2.3;font-size:1.05rem;box-shadow:inset 0 0 30px rgba(120,80,20,.25)}
 .scroll select{display:inline-block;width:auto;max-width:100%;background:#fff8e6;color:#2b2112;border:1px solid #9c7a3c;padding:3px 8px;margin:2px 0;font-weight:600}
 .scroll footer{margin-top:8px;font-size:.85rem;font-style:italic;line-height:1.4;color:#5a4320}
+/* sellos */
+.seals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.seal-b{aspect-ratio:1;border-radius:50%;border:2px solid var(--line);background:radial-gradient(circle at 35% 30%,#3a3050,#1c1828);font-family:var(--f-head);font-weight:700;font-size:clamp(.62rem,1.6vw,.85rem);letter-spacing:.04em;padding:6px;max-width:130px;width:100%;justify-self:center}
+.seal-b.on{border-color:var(--gold2);background:radial-gradient(circle at 35% 30%,#fff3c4,#e2b650 45%,#8a6420 80%);color:#3a2808;box-shadow:0 0 18px rgba(243,217,152,.5)}
+
 /* clasificación */
 .items{display:grid;gap:10px}
 .item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:8px}
@@ -113,13 +140,13 @@ h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;font-weight:700;le
 .seg button.on{background:var(--gold);color:#1c150a}
 .seg.v button.on[data-v="F"]{background:var(--teal)}
 .seg.v button.on[data-v="S"]{background:var(--violet);color:#fff}
-.mcq{display:grid;gap:8px;padding:14px;background:var(--bg2);border:1px solid var(--line);border-radius:8px}
+.mcq{display:grid;gap:8px;padding:14px;background:var(--bg2);border:1px solid var(--line);border-radius:8px;margin:0;min-width:0}
 .mcq label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:6px;border-radius:6px;cursor:pointer}
 .mcq label:hover{background:rgba(255,255,255,.04)}
 .mcq input{margin-top:6px;accent-color:var(--gold)}
 
 /* engranajes */
-.gears{display:grid;gap:8px;counter-reset:g}
+.gears{display:grid;gap:8px}
 .gear{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;background:var(--bg2);border:1px solid var(--line);border-radius:8px}
 .gear .pos{font-family:var(--f-head);color:var(--gold);font-size:1.1rem;text-align:center}
 .gear .ctr{display:flex;gap:4px}
@@ -128,7 +155,7 @@ h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;font-weight:700;le
 .discard{border:1px dashed var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:8px;min-height:56px}
 .discard .gear{opacity:.7}
 
-/* runas escalera */
+/* runas */
 .runes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .rune{border:1px solid var(--line);background:var(--bg2);border-radius:10px;padding:16px 10px;font-family:var(--f-head);font-weight:700;display:grid;gap:6px;justify-items:center;text-align:center;font-size:.9rem}
 .rune .glyph{font-size:1.8rem;color:var(--violet)}
@@ -136,23 +163,61 @@ h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;font-weight:700;le
 .rune.lit .glyph{color:var(--gold2)}
 .rune .ord{font-size:.75rem;color:var(--gold)}
 
+/* dados */
+.dicebox{display:grid;gap:14px;justify-items:center;padding:16px;border:1px solid var(--line);border-radius:10px;background:radial-gradient(circle at 50% 0,#2a2340,var(--bg2))}
+.die-wrap{perspective:600px;width:76px;height:76px;margin:10px}
+.die{width:76px;height:76px;position:relative;transform-style:preserve-3d;transition:transform 1.15s cubic-bezier(.2,.75,.25,1)}
+.die .f{position:absolute;inset:0;border-radius:13px;background:linear-gradient(145deg,#fbf3dc,#e4d3a6);border:2px solid #b89b5e;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:9px;backface-visibility:hidden}
+.die .f i{width:12px;height:12px;border-radius:50%;background:#2a1f45;place-self:center}
+.die .f i.o{background:transparent}
+.die .f1{transform:translateZ(38px)}.die .f6{transform:rotateY(180deg) translateZ(38px)}
+.die .f2{transform:rotateY(90deg) translateZ(38px)}.die .f5{transform:rotateY(-90deg) translateZ(38px)}
+.die .f3{transform:rotateX(90deg) translateZ(38px)}.die .f4{transform:rotateX(-90deg) translateZ(38px)}
+.faces-key{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 14px;font-size:.88rem;color:var(--muted);width:100%}
+.faces-key b{color:var(--gold);font-family:var(--f-head)}
+.pips{display:flex;gap:6px;justify-content:center}
+.pips i{width:16px;height:16px;border-radius:50%;border:2px solid var(--gold);display:block}
+.pips i.on{background:var(--gold2);box-shadow:0 0 10px var(--gold2)}
+.choices{display:grid;gap:8px;width:100%}
+.choice{text-align:left;border:1px solid var(--line);background:var(--bg2);border-radius:8px;padding:12px 14px}
+.choice:hover{border-color:var(--gold)}
+
 /* cerradura */
 .lock{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 .dial{display:grid;gap:6px;justify-items:center}
 .dial button{width:52px;height:34px;border:1px solid var(--line);background:var(--panel2);border-radius:6px}
 .dial .d{width:64px;height:78px;display:grid;place-items:center;font-family:var(--f-title);font-size:2.3rem;color:var(--teal);background:#0a0f13;border:2px solid #2d4a50;border-radius:10px;box-shadow:inset 0 0 18px rgba(95,212,207,.25);font-variant-numeric:tabular-nums}
+.wordslot{min-height:58px;border:2px dashed var(--gold);border-radius:10px;padding:10px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;background:rgba(214,179,106,.06)}
+.wordslot .syl,.sylbank .syl{font-size:1.15rem;padding:8px 14px}
+.sylbank{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.sylbank button.syl:disabled{opacity:.25}
 
 /* grimorio */
-.grimoire{position:fixed;z-index:40;top:calc(env(safe-area-inset-top,0px) + 70px);right:max(16px,env(safe-area-inset-right,0px));width:min(420px,calc(100vw - 32px));max-height:70vh;overflow:auto;background:#17131f;border:1px solid var(--gold);border-radius:10px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.6);display:grid;gap:12px}
+.grimoire{position:fixed;z-index:40;top:calc(env(safe-area-inset-top,0px) + 70px);right:max(16px,env(safe-area-inset-right,0px));width:min(430px,calc(100vw - 32px));max-height:72vh;overflow:auto;background:#17131f;border:1px solid var(--gold);border-radius:10px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.6);display:grid;gap:12px}
 .grimoire ol{margin:0;padding-left:1.3em;display:grid;gap:10px}
 .grimoire li::marker{color:var(--gold);font-family:var(--f-head)}
 
+/* puertas */
+.doors{position:fixed;inset:0;z-index:45;display:flex;overflow:hidden}
+.doors .door{flex:1;background:repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 2px,transparent 2px 64px),repeating-linear-gradient(90deg,rgba(0,0,0,.2) 0 2px,transparent 2px 120px),linear-gradient(180deg,#2b2638,#15121d);transition:transform 1s cubic-bezier(.7,0,.3,1) .75s;border-inline:3px solid #0a0810}
+.doors.open{pointer-events:none}
+.doors.open .l{transform:translateX(-101%)}.doors.open .r{transform:translateX(101%)}
+.doors .doortxt{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:8px;text-align:center;padding:20px;transition:opacity .4s .6s}
+.doors.open .doortxt{opacity:0}
+.doors .doortxt b{font-family:var(--f-title);font-size:clamp(2.2rem,8vw,4.5rem);color:var(--gold2);text-shadow:0 0 30px rgba(243,217,152,.5)}
+.doors .doortxt small{font-family:var(--f-head);font-size:1.05rem;color:var(--fg)}
+
 /* overlays */
-.overlay{position:fixed;inset:0;z-index:50;background:rgba(5,4,9,.82);display:grid;place-items:center;padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px));overflow:auto}
-.modal{max-width:620px;width:100%;background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:26px;display:grid;gap:14px;text-align:center;justify-items:center;box-shadow:0 0 60px rgba(157,123,255,.25)}
-.modal img{width:160px;border-radius:8px;border:1px solid var(--line)}
-.modal h2{color:var(--gold2);font-size:1.6rem}
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(5,4,9,.86);display:grid;place-items:center;padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px));overflow:auto}
+.modal{max-width:760px;width:100%;background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:26px;display:grid;gap:16px;text-align:center;justify-items:center;box-shadow:0 0 60px rgba(157,123,255,.25)}
+.modal h2{color:var(--gold2);font-family:var(--f-title);font-size:clamp(1.7rem,5vw,2.6rem)}
+.bigpts{font-family:var(--f-title);font-weight:900;font-size:clamp(3.4rem,13vw,6.2rem);line-height:1;color:var(--gold2);text-shadow:0 0 40px rgba(243,217,152,.55);font-variant-numeric:tabular-nums;animation:pop .6s both}
+.bigpts small{display:block;font-family:var(--f-head);font-size:.95rem;letter-spacing:.2em;color:var(--muted);text-shadow:none;margin-top:6px}
+.celebgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;width:100%;text-align:left}
+.cbox{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--bg2);display:grid;gap:8px;align-content:start}
+.bigsyl{font-family:var(--f-title);font-weight:900;font-size:2.6rem;justify-self:center;padding:6px 22px;border-radius:10px;color:#2b1f08;background:linear-gradient(180deg,#fff3c4,#d9ae55);box-shadow:0 0 30px rgba(243,217,152,.55);animation:pop .7s .3s both}
 .clue{border:1px dashed var(--gold);border-radius:8px;padding:12px 14px;background:rgba(214,179,106,.07);text-align:left;width:100%}
+.clue p{margin:6px 0 0}
 
 /* final */
 .seal{width:170px;height:170px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#fff3c4,#e2b650 40%,#8a6420 75%);box-shadow:0 0 50px rgba(243,217,152,.6),inset 0 -8px 20px rgba(0,0,0,.35);animation:glow 2.4s ease-in-out infinite;color:#4a3410;font-family:var(--f-title);font-weight:900;font-size:1.05rem;text-align:center;line-height:1.1;padding:20px}
@@ -162,50 +227,178 @@ h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;font-weight:700;le
 .tile{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;text-align:left}
 .tile b{display:block;font-family:var(--f-head);font-size:1.6rem;color:var(--gold2);font-variant-numeric:tabular-nums}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+.quote{font-style:italic;color:#d8d0e6;max-width:44ch}
 
+/* bonus: escalera */
+.bonus-head{display:grid;grid-template-columns:150px minmax(0,1fr);gap:20px;align-items:center}
+.bonus-head>div{min-width:0}
+.bonus-head img{border-radius:10px;border:1px solid var(--line)}
+.stairs{display:grid;gap:14px}
+.stair{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:10px;padding:18px 20px;display:grid;gap:10px}
+.stair:nth-child(1){--c:#9d7bff;margin-right:9%}.stair:nth-child(2){--c:#62d48d;margin-inline:3% 6%}.stair:nth-child(3){--c:#ffb454;margin-inline:6% 3%}.stair:nth-child(4){--c:#5fd4cf;margin-left:9%}
+.stair h3{color:var(--c);font-size:1.25rem}
+.stair h3 span{font-family:var(--f-title);margin-right:8px}
+.stair ul{margin:0;padding-left:1.2em;display:grid;gap:4px}
+.stair .ex{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.stair .ex div{background:var(--bg2);border-radius:8px;padding:10px 12px;font-size:.96rem}
+.stair .avoid{color:#ffb3b3;font-size:.95rem}
+.prompt{white-space:pre-wrap;background:#0a0f13;border:1px solid #2d4a50;border-radius:8px;padding:14px;font-size:.95rem;color:#cfe9e7;margin:0;font-family:var(--f-body)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;gap:10px}
+.card h3{color:var(--gold2)}
+.card ul,.card ol{margin:0;padding-left:1.3em;display:grid;gap:6px}
+
+/* repaso */
+.hero-side{display:grid;gap:18px;align-content:start}
+.recap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:18px 24px;align-items:start;background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:22px}
+.recap img{border-radius:10px;border:1px solid var(--line);display:block;width:100%;grid-row:span 2}
+.rhead,.rbody{display:grid;gap:12px;min-width:0}
+.recap h2{color:var(--gold2);font-size:clamp(1.3rem,3vw,1.8rem)}
+.recap ul{margin:0;padding-left:1.2em;display:grid;gap:10px}
+.recap li::marker{color:var(--gold)}
+.dots{display:flex;gap:6px}
+.dots i{width:26px;height:6px;border-radius:3px;background:#2b2540}
+.dots i.on{background:var(--gold)}
+.toast{position:fixed;z-index:70;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100vw - 32px);background:#1d2a1f;border:1px solid var(--ok);color:#d9ffe6;border-radius:999px;padding:12px 22px;font-family:var(--f-head);font-size:.92rem;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.6);animation:pop .5s both}
+.prog{display:flex;gap:3px;margin-bottom:4px}
+.prog i{width:16px;height:7px;border-radius:2px;background:#2b2540;display:block}
+.prog i.done{background:var(--gold)}
+.prog i.now{background:var(--violet)}
 /* docente */
 .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
-table{border-collapse:collapse;width:100%;min-width:860px;font-size:.92rem}
+table .btn,.pill{white-space:nowrap}
+table{border-collapse:collapse;width:100%;min-width:1280px;font-size:.92rem}
 th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{font-family:var(--f-head);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--bg2);position:sticky;top:0}
+th{font-family:var(--f-head);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--bg2)}
 th button{background:none;border:0;padding:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit}
 td.num{font-variant-numeric:tabular-nums;text-align:right}
+.teacher td:last-child,.teacher th:last-child{position:sticky;right:0;background:var(--panel);box-shadow:-8px 0 12px -8px rgba(0,0,0,.6)}
+.teacher th:last-child{background:var(--bg2)}
 .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;font-family:var(--f-head);border:1px solid}
 .pill.done{color:var(--ok);border-color:var(--ok)}
 .pill.run{color:var(--warn);border-color:var(--warn)}
 .pill.reset{color:var(--bad);border-color:var(--bad)}
-.quote{font-style:italic;color:#d8d0e6;max-width:36ch}
-.sync{font-size:.82rem;color:var(--muted)}
-.sync.off{color:var(--warn)}
 
-@media (max-width:860px){
+/* ----- Tablet horizontal y portátiles pequeños ----- */
+@media (max-width:1100px){
+  .hud .who{display:none}
   .hero{grid-template-columns:minmax(0,1fr)}
+  .hero-side{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
+}
+/* ----- Tablet vertical ----- */
+@media (max-width:900px){
+  .hud-in{flex-wrap:wrap}
+  .hud-extra{flex:1 1 100%}
+  .recap{grid-template-columns:170px minmax(0,1fr)}
+  .celebgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+}
+@media (max-width:760px){
   .scene{grid-template-columns:minmax(0,1fr)}
-  .guard{position:static;display:grid;grid-template-columns:110px minmax(0,1fr)}
+  .side{display:contents}
+  .guard{order:1;display:grid;grid-template-columns:104px minmax(0,1fr)}
   .guard img{height:100%;aspect-ratio:auto}
+  .stage{order:2}
+  .board.mini{order:3}
   .item{grid-template-columns:minmax(0,1fr)}
   .item select{width:100%}
+  .item .seg{justify-self:start}
+  .stair{margin-inline:0!important}
 }
-@media (max-width:520px){
+@media (max-width:1000px){
+  /* panel docente en tarjetas */
+  .tablewrap.teacher{border:0;overflow:visible}
+  .teacher table{min-width:0;display:block}
+  .teacher thead{display:none}
+  .teacher tbody{display:grid;gap:12px}
+  .teacher tr{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .teacher td{display:block;border:0;padding:0;text-align:left!important}
+  .teacher td[data-label]::before{content:attr(data-label);display:block;font-family:var(--f-head);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .teacher td:first-child{grid-column:1/-1;font-size:1.1rem;font-weight:700;color:var(--gold2)}
+  .teacher td[data-label="Compromiso"],.teacher td:last-child,.teacher td[colspan]{grid-column:1/-1}
+  .teacher td:last-child{position:static;background:none;box-shadow:none}
+}
+/* ----- Celular ----- */
+@media (max-width:640px){
   body{font-size:17px}
+  .wrap{padding-block:16px 40px}
+  .screen{gap:18px}
+  .hero-side{grid-template-columns:minmax(0,1fr)}
+  .hero .rules{order:5}
+  .rules{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .reg{padding:16px}
+  .btn{padding:13px 18px}
+  .row-actions .btn:not(.small){flex:1 1 auto}
+  /* barra fija delgada + franja con sílabas y botones */
+  .hud-in{flex-wrap:wrap;justify-content:space-between;gap:4px 10px;padding-block:7px}
+  .hud .label{font-size:.6rem;letter-spacing:.1em}
+  .hud .stat b{font-size:.98rem}
+  .hud .timer b{font-size:1.2rem}
+  .steps{gap:3px}.steps i{width:11px}
+  .hearts{gap:2px}
+  .hud-extra{display:none}
+  .hud2{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:8px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+  .hud2 .stat{display:grid;line-height:1.15}
+  .guard{grid-template-columns:84px minmax(0,1fr)}
+  .guard .gtxt{padding:10px 12px 12px}
+  .speech{font-size:.93rem}
+  .stage{padding:16px;gap:14px}
   .runes{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .stage{padding:16px}
+  .seals{gap:8px}
+  .gear{grid-template-columns:1.6em minmax(0,1fr)}
+  .gear .ctr{grid-column:1/-1;justify-content:flex-end}
+  .gear .ctr button{width:44px;height:40px}
+  .seg button{padding:11px 16px}
+  .dial .d{width:58px;height:70px;font-size:2rem}
+  .dial button{width:52px;height:40px}
+  .lock{gap:8px}
+  .scroll{padding:16px;line-height:2.5}
+  .modal{padding:18px;gap:12px}
+  .celebgrid{grid-template-columns:minmax(0,1fr)}
+  .recap{grid-template-columns:92px minmax(0,1fr);padding:16px;gap:14px}
+  .recap img{grid-row:auto}
+  .rbody{grid-column:1/-1}
+  .bonus-head{grid-template-columns:72px minmax(0,1fr);gap:14px;align-items:start}
+  .bonus-head h1{font-size:1.35rem!important}
+  .stair{padding:14px 16px}
+  .stair .ex{grid-template-columns:minmax(0,1fr)}
+  .win{padding:22px 16px}
+  .tiles{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .grimoire{top:calc(env(safe-area-inset-top,0px) + 58px)}
+}
+@media (max-width:380px){
+  .rules{grid-template-columns:minmax(0,1fr)}
+  .teacher tr{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+}
+/* pantallas táctiles: controles más grandes */
+@media (pointer:coarse){
+  .iconbtn{padding:10px 12px}
+  .btn.small{padding:10px 14px}
+  .item select,.scroll select{min-height:44px}
+  .choice{padding:14px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-[hidden]{display:none!important}
-img{max-width:100%}
+@media print{
+  body{background:#fff!important;color:#111!important}
+  #embers,.noprint,.hud{display:none!important}
+  .stair,.card{background:#fff!important;border-color:#999!important;break-inside:avoid;margin-inline:0!important}
+  .stair .ex div,.prompt{background:#f3f3f3!important;color:#111!important}
+  .stair h3,.card h3,h1{color:#111!important}
+  .note,.stair .avoid{color:#444!important}
+}
 </style>
 <script src="config.js"></script>
 </head>
 <body>
+<canvas id="embers" aria-hidden="true"></canvas>
 <div id="app"></div>
 <canvas id="confetti" hidden></canvas>
 
 <script>
-const IMG = Object.fromEntries(['tiempo','duende','inventor','alquimista','oraculo','golem','sombra','cronista'].map(n => [n, 'img/' + n + '.jpg']));
+const IMG = Object.fromEntries(["tiempo", "cronista", "duende", "inventor", "alquimista", "oraculo", "golem", "sombra", "elfa"].map(n => [n, 'img/' + n + '.jpg']));
 const PASS = "santillana2026";
 const TOTAL_SEC = 30 * 60;
-const MAX_LIVES = 3;
+const MAX_LIVES = 5;
+const KEYWORD = 'APRENDIZAJE';
+const CODE = '3536';
 
 /* ---------------- utilidades ---------------- */
 const $ = s => document.querySelector(s);
@@ -222,9 +415,11 @@ function h(tag, attrs, ...kids){
   return e;
 }
 const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const pick = a => a[Math.floor(Math.random()*a.length)];
 const fmtTime = s => { s=Math.max(0,Math.round(s)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); };
-const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z]/g,'');
-const store = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} } };
+const num = n => (Number(n)||0).toLocaleString('es-CO');
+const store = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }, del(k){ try{ localStorage.removeItem(k); }catch(e){} } };
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------------- sonido (Web Audio, sin archivos) ---------------- */
 const Sfx = (() => {
@@ -250,7 +445,7 @@ const Sfx = (() => {
     lp.connect(g); g.connect(master); lfo.start();
     drone = {g, os, lfo};
   }
-  function stopDrone(){ if (!drone) return; const c = ac(); drone.g.gain.exponentialRampToValueAtTime(.0001, c.currentTime+.6); const d = drone; drone = null; setTimeout(()=>{ d.os.forEach(o=>o.stop()); d.lfo.stop(); }, 800); }
+  function stopDrone(){ if (!drone) return; const c = ac(); const d = drone; drone = null; try { d.g.gain.exponentialRampToValueAtTime(.0001, c.currentTime+.6); } catch(e){} setTimeout(()=>{ try { d.os.forEach(o=>o.stop()); d.lfo.stop(); } catch(e){} }, 800); }
   return {
     get muted(){ return muted; },
     toggle(){ muted = !muted; store.set('torre-mute', muted?'1':'0'); if (muted) stopDrone(); else if (S.running) startDrone(); return muted; },
@@ -260,107 +455,173 @@ const Sfx = (() => {
     ok(){ [523,659,784].forEach((f,i)=>tone(f,.28,'triangle',.22,i*.08)); },
     bad(){ tone(196,.4,'sawtooth',.18,0,92); tone(147,.45,'square',.06,.05,70); },
     unlock(){ [392,523,659,784,1046].forEach((f,i)=>tone(f,.45,'triangle',.2,i*.1)); tone(1568,.9,'sine',.08,.5); },
+    door(){ tone(70,1.3,'sawtooth',.16,.5,40); tone(95,1.1,'square',.05,.6,55); },
+    dice(){ for (let i=0;i<9;i++) tone(500+Math.random()*900,.035,'square',.07,i*.11+Math.random()*.03); },
+    coin(){ tone(988,.09,'square',.12); tone(1319,.35,'square',.12,.09); },
     tick(){ tone(1250,.04,'square',.06); },
     gameover(){ [392,330,262,196,131].forEach((f,i)=>tone(f,.55,'sawtooth',.14,i*.22)); },
     win(){ const m=[[523,0],[659,.14],[784,.28],[1046,.42],[784,.62],[1046,.76],[1318,.95]]; m.forEach(([f,t])=>{ tone(f,.5,'triangle',.22,t); tone(f/2,.5,'sine',.1,t); }); tone(1568,1.6,'sine',.1,1.2); }
   };
 })();
 
-/* ---------------- registro compartido (Google Sheets vía Apps Script) ---------------- */
-const API = String((window.TORRE_CONFIG && window.TORRE_CONFIG.urlRegistro) || '').trim();
-const LOCAL_KEY = 'torre-jugadores';
-const NUMS = ['puntos','mejorPuntaje','retoActual','retosSuperados','reinicios','tiempoSeg','bonoTiempo'];
-let players = [], dbq = Promise.resolve(), syncOk = true;
-function localAll(){ try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}'); } catch(e){ return {}; } }
-function localPut(all){ try { localStorage.setItem(LOCAL_KEY, JSON.stringify(all)); } catch(e){} }
-function setSync(ok){ syncOk = ok; }
-async function post(body){
-  const r = await fetch(API, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
-  const j = await r.json(); if (!j.ok) throw new Error(j.error || 'error'); return j;
+/* ---------------- registro compartido ---------------- */
+let players = [];
+function onPlayers(){
+  renderBoard(); checkGifts();
+  const n = $('#reg-note'); if (n) n.textContent = regNote();
+  const typing = document.activeElement && document.activeElement.id === 't-filter';
+  if (S.view === 'teacher' && S.teacherOk && !S.confirming && !typing) renderTeacher();
 }
-function saveRemote(patch){
-  if (!S.docId) return;
-  const id = S.docId, body = Object.assign({}, patch, { actualizado: new Date().toISOString() });
-  if (!API){ const all = localAll(); all[id] = Object.assign(all[id] || { id }, body); localPut(all); loadPlayers(); return; }
-  dbq = dbq.then(() => post({ action:'upsert', id, data: body })).then(() => setSync(true)).catch(e => { console.warn('registro', e); setSync(false); });
-}
-function normP(p){ NUMS.forEach(k => p[k] = Number(p[k]) || 0); ['id','nombre','grupo','estado','compromiso','inicio','fin','actualizado'].forEach(k => p[k] = p[k] == null ? '' : String(p[k])); return p; }
-async function loadPlayers(){
-  try {
-    let list;
-    if (!API) list = Object.values(localAll());
-    else { const r = await fetch(API + (API.includes('?') ? '&' : '?') + 't=' + Date.now()); const j = await r.json(); list = j.jugadores || []; }
-    players = list.map(normP);
-    renderBoard();
-    const typing = document.activeElement && document.activeElement.id === 't-filter';
-    if (S.view === 'teacher' && S.teacherOk && !S.confirming && !typing) renderTeacher();
-  } catch(e){ console.warn('lectura', e); }
-}
-async function deletePlayer(id){
-  if (!API){ const all = localAll(); delete all[id]; localPut(all); return loadPlayers(); }
-  await post({ action:'delete', id, clave: S.teacherKey });
-  await loadPlayers();
-}
-setTimeout(loadPlayers, 0);
-setInterval(() => { if (['intro','teacher','win'].includes(S.view) && !document.hidden) loadPlayers(); }, 10000);
+const Backend = (() => {
+  const API = String((window.TORRE_CONFIG && window.TORRE_CONFIG.urlRegistro) || '').trim();
+  const LOCAL_KEY = 'torre-jugadores';
+  const NUMS = ['puntos','mejorPuntaje','retoActual','retosSuperados','reinicios','tiempoSeg','bonoTiempo','vidasExtra'];
+  let q = Promise.resolve();
+  const localAll = () => { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}'); } catch(e){ return {}; } };
+  const localPut = all => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(all)); } catch(e){} };
+  async function post(body){
+    const r = await fetch(API, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+    const j = await r.json(); if (!j.ok) throw new Error(j.error || 'error'); return j;
+  }
+  const normP = p => { NUMS.forEach(k => p[k] = Number(p[k]) || 0); ['id','nombre','grupo','estado','compromiso','inicio','fin','actualizado'].forEach(k => p[k] = p[k] == null ? '' : String(p[k])); return p; };
+  async function refresh(){
+    try {
+      let list;
+      if (!API) list = Object.values(localAll());
+      else { const r = await fetch(API + (API.includes('?') ? '&' : '?') + 't=' + Date.now()); const j = await r.json(); list = j.jugadores || []; }
+      players = list.map(normP); onPlayers();
+    } catch(e){ console.warn('lectura', e); }
+  }
+  setTimeout(refresh, 0);
+  setInterval(() => { if (['intro','teacher','win','game'].includes(S.view) && !document.hidden) refresh(); }, 10000);
+  return {
+    shared: !!API, canDownload: true, canPrint: true,
+    offlineNote: 'Modo de prueba: el registro compartido aún no está configurado en config.js, así que los puntajes solo se guardan en este dispositivo.',
+    liveNote: 'Se actualiza cada 10 segundos.',
+    save(id, body){
+      if (!API){ const all = localAll(); all[id] = Object.assign(all[id] || { id }, body); localPut(all); refresh(); return; }
+      q = q.then(() => post({ action:'upsert', id, data: body })).catch(e => console.warn('registro', e));
+    },
+    async remove(id, clave){
+      if (!API){ const all = localAll(); delete all[id]; localPut(all); return; }
+      await post({ action:'delete', id, clave });
+    },
+    async download(name, text){
+      const url = URL.createObjectURL(new Blob([text], { type:'text/csv;charset=utf-8' }));
+      const a = document.createElement('a'); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    },
+    refresh
+  };
+})();
 
-/* ---------------- contenido ---------------- */
+function saveRemote(patch, create){
+  if (!S.docId) return;
+  Backend.save(S.docId, Object.assign({}, patch, { actualizado: new Date().toISOString() }), !!create);
+}
+const regNote = () => Backend.shared ? 'Tu puntaje quedará registrado en el panel docente.' : Backend.offlineNote;
+
+/* ---------------- personajes ---------------- */
 const GUARD = {
-  tiempo:{name:'Cronos, Guardián del Reloj', img:'tiempo'},
-  duende:{name:'Grimbol, el Embaucador de Mitos', img:'duende'},
-  inventor:{name:'Maese Engranaje', img:'inventor'},
-  alquimista:{name:'Veridián, el Alquimista', img:'alquimista'},
-  oraculo:{name:'Selene, Oráculo de la Escalera', img:'oraculo'},
-  golem:{name:'Petra, la Cerradura Viviente', img:'golem'},
-  sombra:{name:'La Sombra del Juicio', img:'sombra'},
-  cronista:{name:'La Cronista', img:'cronista'}
+  tiempo:{name:'Cronos, Guardián del Reloj'},
+  cronista:{name:'La Cronista de la Memoria'},
+  duende:{name:'Grimbol, el Embaucador de Mitos'},
+  inventor:{name:'Maese Engranaje'},
+  alquimista:{name:'Veridián, el Alquimista'},
+  oraculo:{name:'Selene, Oráculo de la Escalera'},
+  golem:{name:'Petra, la Cerradura Viviente'},
+  sombra:{name:'La Sombra del Juicio'},
+  elfa:{name:'Lía, Guardiana del Jardín'}
 };
 
 /* ---------------- estado ---------------- */
-const S = { teacherKey:'', confirming:false, view:'intro', running:false, docId:null, nombre:'', grupo:'', reto:0, score:0, lives:MAX_LIVES, livesLost:0, hintUsed:false, restarts:0, clues:[], runStart:0, timer:null, bestScore:0, teacherOk:false, sort:{k:'puntos',dir:-1}, finalSec:0, lastScore:0 };
+const S = { view:'intro', running:false, dead:false, token:0, docId:null, nombre:'', grupo:'', reto:0, score:0, lives:MAX_LIVES, livesLost:0, hintUsed:false, restarts:0,
+  clues:[], syls:[], giftsSeen:0, pendingLives:0, runStart:0, pausedMs:0, pauseAt:0, timer:null, bestScore:0, teacherOk:false, teacherKey:'', confirming:false, filter:'', sort:{k:'mejorPuntaje',dir:-1}, finalSec:0, lastScore:0, phrase:'' };
 
-/* ---------------- RETOS ---------------- */
+function saveRun(){
+  if (!S.docId || !S.running) return;
+  if (S.pendingNext && S.reto >= RETOS.length - 1) return;
+  store.set('torre-run', JSON.stringify({ docId:S.docId, nombre:S.nombre, grupo:S.grupo, reto:S.reto + (S.pendingNext ? 1 : 0), score:S.score, clues:S.clues, syls:S.syls, restarts:S.restarts, bestScore:S.bestScore, giftsSeen:S.giftsSeen, pendingLives:S.pendingLives, elapsed:elapsed(), ts:Date.now() }));
+}
+function loadRun(){
+  try { const r = JSON.parse(store.get('torre-run') || 'null'); if (r && r.docId && Date.now() - r.ts < 3*3600*1000 && r.elapsed < TOTAL_SEC - 30 && r.reto < 6) return r; } catch(e){}
+  return null;
+}
+
+/* ---------------- dado 3D ---------------- */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const DIE_ROT = {1:[0,0],6:[0,180],2:[0,-90],5:[0,90],3:[-90,0],4:[90,0]};
+function makeDie(){
+  const die = h('div',{class:'die'}, [1,2,3,4,5,6].map(n => h('div',{class:'f f'+n}, Array.from({length:9},(_,i)=>h('i',{class:PIPS[n].includes(i)?'':'o'})))));
+  const wrap = h('div',{class:'die-wrap',role:'img','aria-label':'Dado'}, die);
+  let spins = 0;
+  wrap.roll = () => new Promise(res => {
+    const n = 1 + Math.floor(Math.random()*6); spins += 2;
+    const [rx, ry] = DIE_ROT[n];
+    die.style.transform = `rotateX(${rx + 360*spins}deg) rotateY(${ry + 360*spins}deg)`;
+    Sfx.dice(); wrap.setAttribute('aria-label','Dado: ' + n);
+    setTimeout(() => res(n), reduced() ? 150 : 1250);
+  });
+  return wrap;
+}
+
+/* ---------------- PISOS (uno por nivel de Bloom) ---------------- */
+const PASOS = ['1 · Diagnóstico y objetivos','2 · Indicadores','3 · Diseñar y aplicar instrumentos','4 · Recopilar y analizar','5 · Decidir','6 · Reflexionar y recomendar'];
+const VOCES = {
+  'Clarificar':['«¿Puedes contarme con tus palabras qué buscaste lograr en esta parte?»','«¿Qué información usaste para desarrollar esta idea?»','«Cuando escribes “impacto ambiental”, ¿a qué te refieres exactamente?»','«¿Cómo llegaste a este resultado? Explícame tu procedimiento.»'],
+  'Valorar':['«Me parece muy claro tu propósito y la organización de tus ideas.»','«Usaste buenos ejemplos que fortalecen tu argumento.»','«Destaco que relacionaste el tema con una situación de tu barrio; eso lo hace cercano.»','«Tu gráfica permite entender los datos de un vistazo: es un gran acierto.»'],
+  'Expresar inquietudes':['«Me surge una duda: ¿por qué elegiste esta fuente y no otras más recientes?»','«¿Cómo crees que se fortalece tu conclusión con este punto?»','«Me pregunto si el lector entenderá este paso sin un ejemplo. ¿Tú qué crees?»','«Me inquieta que el segundo argumento contradiga al primero. ¿Cómo lo ves tú?»'],
+  'Sugerir':['«Podrías comparar con otra perspectiva para dar más profundidad a tu análisis.»','«Te sugiero revisar la guía de citas para fortalecer tus referencias.»','«Una idea: agrega un ejemplo cotidiano justo después de la definición.»','«Podrías cerrar retomando la pregunta inicial y respondiéndola con tus hallazgos.»'],
+  'Juicio':['«Esto está mal. Hazlo de nuevo.»','«No entiendo nada de lo que escribiste.»','«Se nota que no estudiaste.»','«Siempre entregas lo mismo; así no vas a pasar.»']
+};
+const RUNGS = ['Clarificar','Valorar','Expresar inquietudes','Sugerir'];
+
 const RETOS = [
-/* 1 */ {
-  g:'cronista', title:'El Pergamino de la Cronista',
-  intro:'«La Sombra rasgó mi pergamino y ya nadie recuerda qué significa evaluar para aprender. Reconstruye la definición y luego demuéstrame que reconoces una retroalimentación que de verdad ayuda.»',
-  hint:'La definición de Clark (2008, citado en Montoya, 2018) habla de una motivación que nace desde adentro y de seguir aprendiendo durante toda la vida. En la segunda parte hazte tres preguntas: ¿llegó a tiempo para mejorar? ¿se entiende? ¿señala algo concreto?',
-  clue:'Primer dígito de la cerradura: ¿cuántas virtudes debe reunir una buena retroalimentación según el pergamino de la Cronista?',
+/* 1 · RECORDAR */ {
+  g:'cronista', title:'El Pergamino de la Memoria', syl:'DI',
+  intro:'«La Sombra rasgó mi pergamino y la Torre olvidó qué significa evaluar para aprender. Todo ascenso empieza por recordar: reconstruye la definición y devuélveme los tres sellos de la buena retroalimentación.»',
+  hint:'La definición de Clark (2008, citado en Montoya, 2018) habla de una motivación que nace desde adentro y de seguir aprendiendo durante toda la vida. Los tres sellos responden a: ¿llega a tiempo?, ¿se entiende?, ¿señala algo concreto?',
+  clue:'Primer dígito de la cerradura: el número de sellos que debe reunir una buena retroalimentación.',
   render(box, api){
     const A = h('div',{class:'part'}), B = h('div',{class:'part',hidden:true});
     box.append(A,B);
     const BANK = ['motivar','calificar','intrínseca','extrínseca','capacidades','notas','a lo largo de la vida','al final del periodo'];
     const RIGHT = ['motivar','intrínseca','capacidades','a lo largo de la vida'];
-    const sel = RIGHT.map((_,i) => h('select',{id:'perg-'+i,'aria-label':'Espacio '+(i+1)}, h('option',{value:'',text:'— '+(i+1)+' —'}), shuffle(BANK).map(w=>h('option',{value:w,text:w}))));
+    const sel = RIGHT.map((r,i) => h('select',{id:'perg-'+i,'data-r':r,'aria-label':'Espacio '+(i+1)}, h('option',{value:'',text:'— '+(i+1)+' —'}), shuffle(BANK).map(w=>h('option',{value:w,text:w}))));
     sel.forEach(s => s.addEventListener('change',()=>Sfx.click()));
     const fa = h('div',{class:'feedback',hidden:true});
-    const btn = h('button',{class:'btn'},'Restaurar el pergamino');
+    const btn = h('button',{class:'btn',id:'perg-ok'},'Restaurar el pergamino');
     btn.addEventListener('click', () => {
       if (sel.some(s=>!s.value)){ feedback(fa,'bad','Completa los cuatro espacios.'); return; }
       const good = sel.filter((s,i)=>s.value===RIGHT[i]).length;
       if (good === 4){ feedback(fa,'ok','¡El pergamino brilla de nuevo!'); btn.disabled = true; Sfx.ok(); setTimeout(()=>{ A.hidden = true; B.hidden = false; }, 700); }
       else { feedback(fa,'bad',`${good} de 4 palabras están en su lugar.`); api.lose('El pergamino rechazó la definición.'); }
     });
-    A.append(h('h3',{text:'Parte 1 · El pergamino roto'}), h('p',{text:'Elige la palabra que va en cada espacio. Cuidado: en el banco hay palabras trampa. Solo sabrás cuántas acertaste.'}),
+    A.append(h('h3',{text:'Parte 1 · El pergamino roto'}), h('p',{text:'Elige la palabra que va en cada espacio. Cuidado: el banco tiene palabras trampa. Solo sabrás cuántas acertaste.'}),
       h('blockquote',{class:'scroll'}, 'La evaluación para el aprendizaje es una forma de evaluación orientada a ', sel[0], ' a los y las estudiantes de forma ', sel[1], ', además de generar ', sel[2], ' para continuar el aprendizaje ', sel[3], '.', h('footer',{text:'Clark (2008), citado en Montoya (2018)'})),
       fa, h('div',{class:'row-actions'}, btn));
-    B.append(h('h3',{text:'Parte 2 · Las tres virtudes de la retroalimentación'}),
-      h('p',{text:'El pergamino continúa: «La retroalimentación aporta información útil para optimizar el aprendizaje cuando es oportuna, clara y específica». Para cada comentario indica qué virtud le falta, o si cumple las tres. Necesitas las 8 correctas.'}));
-    classify(B, [
-      ['Al terminar el año escolar, el docente devuelve el ensayo del primer periodo con la nota «Revisa tus citas». Ya no hay forma de corregirlo.','Le falta ser oportuna'],
-      ['Camila expuso en marzo; en noviembre recibe por fin los comentarios sobre cómo mejorar sus diapositivas.','Le falta ser oportuna'],
-      ['A un estudiante de séptimo grado: «Tu argumentación adolece de cohesión epistémica y de isomorfismo entre premisas».','Le falta ser clara'],
-      ['Al margen del taller, a mano y con abreviaturas: «rev. coh. y cit. s/ norm., ver crit. 3b».','Le falta ser clara'],
-      ['«Buen trabajo, sigue así.»','Le falta ser específica'],
-      ['«Le falta un poco más; tú puedes hacerlo mejor.»','Le falta ser específica'],
-      ['Mientras resuelve el taller: «En el ejercicio 3 confundiste área con perímetro; revisa la fórmula del recuadro azul y vuelve a intentarlo».','Cumple las tres'],
-      ['Sobre el borrador, antes de la entrega final: «Tu introducción presenta bien el tema; en la conclusión, retoma la pregunta inicial y respóndela con tus dos hallazgos principales».','Cumple las tres']
-    ], ['Le falta ser oportuna','Le falta ser clara','Le falta ser específica','Cumple las tres'], api, () => api.pass());
+
+    const SEALS = [['Oportuna',1],['Clara',1],['Específica',1],['Extensa',0],['Severa',0],['Numérica',0],['Pública',0],['Tardía',0]];
+    const chosen = new Set();
+    const grid = h('div',{class:'seals'});
+    shuffle(SEALS).forEach(([n,ok]) => { const b = h('button',{class:'seal-b','data-ok':ok,'aria-pressed':'false',text:n});
+      b.addEventListener('click',()=>{ Sfx.click(); if (chosen.has(n)) chosen.delete(n); else chosen.add(n); b.classList.toggle('on', chosen.has(n)); b.setAttribute('aria-pressed', chosen.has(n)); });
+      grid.append(b); });
+    const fb = h('div',{class:'feedback',hidden:true});
+    const btn2 = h('button',{class:'btn',id:'seals-ok'},'Estampar los sellos');
+    btn2.addEventListener('click', () => {
+      if (chosen.size !== 3){ feedback(fb,'bad',`Debes elegir exactamente 3 sellos (llevas ${chosen.size}).`); return; }
+      const good = SEALS.filter(([n,ok])=>ok && chosen.has(n)).length;
+      if (good === 3){ feedback(fb,'ok','¡Los tres sellos encajan!'); btn2.disabled = true; setTimeout(()=>api.pass(), 600); }
+      else { feedback(fb,'bad',`${good} de 3 sellos son correctos.`); api.lose('Sello equivocado.'); }
+    });
+    B.append(h('h3',{text:'Parte 2 · Los tres sellos'}),
+      h('p',{text:'El pergamino continúa: «La retroalimentación aporta información útil para optimizar el aprendizaje cuando es ___, ___ y ___». Elige los tres sellos correctos.'}),
+      grid, fb, h('div',{class:'row-actions'}, btn2));
   }
 },
-/* 2 */ {
-  g:'duende', title:'La Guarida de los Mitos',
-  intro:'«Je, je… Llevo años susurrando falsedades en las salas de profesores. ¿Sabrás distinguir mis mitos de las verdades? Y si los desenmascaras, demuéstrame que sabes desmontarlos.»',
+/* 2 · COMPRENDER */ {
+  g:'duende', title:'La Guarida de los Mitos', syl:'ZA',
+  intro:'«Je, je… Llevo años susurrando falsedades en las salas de profesores. Recordar no basta: ¿comprendes lo suficiente para distinguir mis mitos de las verdades y explicar por qué caen?»',
   hint:'Las tres frases de las tarjetas del taller («Evaluar es calificar», «Solo el profesor evalúa», «La evaluación es al final») son mitos. Desconfía de las palabras absolutas: «solo», «únicamente», «ya no necesita», «hay que elegir solo una».',
   clue:'Segundo dígito: ¿cuántos MITOS desenmascaraste en la guarida de Grimbol?',
   render(box, api){
@@ -396,10 +657,10 @@ const RETOS = [
     ], api, () => api.pass());
   }
 },
-/* 3 */ {
-  g:'inventor', title:'La Máquina del Proceso',
-  intro:'«Mi máquina reproduce el proceso de evaluación para el aprendizaje, pero alguien metió dos piezas falsas y desordenó los engranajes. Retira las intrusas y ordena las seis piezas verdaderas.»',
-  hint:'Las piezas falsas no ayudan a aprender: una fomenta la competencia, otra esconde los criterios. El proceso empieza con un diagnóstico y los objetivos, y termina usando la información para reflexionar y retroalimentar.',
+/* 3 · APLICAR */ {
+  g:'inventor', title:'La Máquina del Proceso', syl:'A',
+  intro:'«Mi máquina reproduce el proceso de evaluación para el aprendizaje, pero alguien metió dos piezas falsas y desordenó los engranajes. Repárala… y luego ponla a funcionar en un aula de verdad: la de la profe Lucía.»',
+  hint:'Las piezas falsas no ayudan a aprender: una fomenta la competencia y otra esconde los criterios. El proceso empieza con un diagnóstico y los objetivos, y termina usando la información para reflexionar y recomendar. En el caso de Lucía, «decidir» es cambiar el plan; «reflexionar y recomendar» es conversar con los estudiantes.',
   clue:'Tercer dígito: la posición que ocupa el engranaje «Diseñar y aplicar instrumentos» en la máquina de Maese Engranaje.',
   render(box, api){
     const CORRECT = [
@@ -412,16 +673,17 @@ const RETOS = [
     ];
     const FAKE = ['Publicar un ranking de notas del curso para motivar la competencia entre estudiantes.','Aplicar la prueba final sin socializar antes los criterios de evaluación.'];
     let order = shuffle(CORRECT.concat(FAKE)), out = [];
-    const p = h('div',{class:'part'});
+    const A = h('div',{class:'part'}), B = h('div',{class:'part',hidden:true});
     const list = h('div',{class:'gears'}), tray = h('div',{class:'discard'});
     const fb = h('div',{class:'feedback',hidden:true});
-    p.append(h('p',{text:'Usa ▲ ▼ para mover cada engranaje y «Retirar» para sacar las piezas falsas (hay 2). Tras cada intento la máquina te dirá cuántos engranajes giran en su posición correcta.'}),
+    A.append(h('h3',{text:'Parte 1 · Repara la máquina'}),
+      h('p',{text:'Usa ▲ ▼ para mover cada engranaje y «Retirar» para sacar las piezas falsas (hay 2). Tras cada intento la máquina te dirá cuántos engranajes giran en su posición correcta.'}),
       list, h('div',{class:'label',text:'Piezas retiradas'}), tray, fb,
-      h('div',{class:'row-actions'}, h('button',{class:'btn',onclick:check},'Encender la máquina')));
-    box.append(p);
+      h('div',{class:'row-actions'}, h('button',{class:'btn',id:'gears-ok',onclick:check},'Encender la máquina')));
+    box.append(A,B);
     function draw(){
       list.innerHTML = ''; tray.innerHTML = '';
-      order.forEach((t,i) => list.append(h('div',{class:'gear'}, h('span',{class:'pos',text:i+1}), h('span',{text:t}),
+      order.forEach((t,i) => list.append(h('div',{class:'gear','data-c':CORRECT.indexOf(t)}, h('span',{class:'pos',text:i+1}), h('span',{text:t}),
         h('span',{class:'ctr'},
           h('button',{'aria-label':'Subir',disabled:i===0,onclick:()=>{ Sfx.click(); [order[i-1],order[i]]=[order[i],order[i-1]]; draw(); }},'▲'),
           h('button',{'aria-label':'Bajar',disabled:i===order.length-1,onclick:()=>{ Sfx.click(); [order[i+1],order[i]]=[order[i],order[i+1]]; draw(); }},'▼'),
@@ -434,24 +696,34 @@ const RETOS = [
       if (order.length !== 6){ feedback(fb,'bad', `La máquina necesita exactamente 6 engranajes; ahora tiene ${order.length}.`); return; }
       const good = order.filter((t,i)=>t===CORRECT[i]).length;
       const fakesIn = order.filter(t=>FAKE.includes(t)).length;
-      if (good === 6){ feedback(fb,'ok','¡La máquina gira perfectamente!'); setTimeout(()=>api.pass(), 500); return; }
+      if (good === 6){ feedback(fb,'ok','¡La máquina gira perfectamente!'); Sfx.ok(); setTimeout(()=>{ A.hidden = true; B.hidden = false; }, 700); return; }
       let msg = `Engranajes en su posición correcta: ${good} de 6.`;
       if (fakesIn) msg += ` Además, ${fakesIn === 1 ? 'una pieza falsa sigue' : 'las dos piezas falsas siguen'} dentro de la máquina.`;
       feedback(fb,'bad', msg); api.lose('La máquina se atascó.');
     }
     draw();
+    B.append(h('h3',{text:'Parte 2 · La máquina en el aula de Lucía'}),
+      h('div',{class:'casebox'}, h('b',{text:'El caso: '}), 'Lucía enseña matemáticas en 6.º y va a iniciar la unidad de fracciones. ¿A qué paso del proceso corresponde cada una de sus acciones? Necesitas las 6 correctas.'));
+    classify(B, [
+      ['Antes de iniciar la unidad, Lucía propone una actividad corta para saber qué recuerdan sus estudiantes sobre fracciones y define qué deben lograr al final.',PASOS[0]],
+      ['Convierte el objetivo «resolver problemas con fracciones» en desempeños observables: representa, compara y opera fracciones en situaciones cotidianas.',PASOS[1]],
+      ['Elabora una rúbrica y un taller de problemas, comparte los criterios con el grupo y los aplica en clase.',PASOS[2]],
+      ['Reúne los talleres resueltos, tabula los resultados y descubre que la mayoría falla al comparar fracciones con distinto denominador.',PASOS[3]],
+      ['Con esos resultados resuelve dedicar dos clases más al tema y cambiar la guía por material concreto.',PASOS[4]],
+      ['Conversa con cada equipo sobre lo que encontró y les entrega recomendaciones puntuales para mejorar antes de la siguiente actividad.',PASOS[5]]
+    ], PASOS, api, () => api.pass());
   }
 },
-/* 4 */ {
-  g:'alquimista', title:'El Laboratorio de las Esencias',
-  intro:'«La evaluación sumativa y la formativa no se contraponen: se complementan. Pero cada esencia debe ir en su frasco. Si las mezclas mal, el laboratorio explota.»',
-  hint:'Pregúntate: ¿sucede mientras se aprende, para mejorar y ajustar (formativa), o al cierre, para certificar y decidir (sumativa)? Hay exactamente 6 de cada una.',
+/* 4 · ANALIZAR */ {
+  g:'alquimista', title:'El Laboratorio de las Esencias', syl:'JE',
+  intro:'«La evaluación sumativa y la formativa no se contraponen: se complementan. Analiza cada esencia y sepárala en su frasco. Después examina con lupa estos comentarios de docentes: ¿qué le falta a cada uno?»',
+  hint:'Pregúntate: ¿sucede mientras se aprende, para mejorar y ajustar (formativa), o al cierre, para certificar (sumativa)? Hay 6 formativas y 4 sumativas. En los comentarios: ¿llegó a tiempo para mejorar?, ¿se entiende?, ¿señala algo concreto?',
   clue:'Cuarto dígito: ¿cuántas esencias pertenecían al frasco de la evaluación FORMATIVA?',
   render(box, api){
-    const p = h('div',{class:'part'});
-    box.append(p);
-    p.append(h('p',{text:'Asigna cada esencia a su frasco: Formativa o Sumativa. Necesitas las 12 correctas; Veridián solo revela cuántas acertaste.'}));
-    classify(p, [
+    const A = h('div',{class:'part'}), B = h('div',{class:'part',hidden:true});
+    box.append(A,B);
+    A.append(h('h3',{text:'Parte 1 · Los dos frascos'}), h('p',{text:'Asigna cada esencia a su frasco: Formativa o Sumativa. Necesitas las 10 correctas; Veridián solo revela cuántas acertaste.'}));
+    classify(A, [
       ['Se realiza durante el proceso de aprendizaje.','Formativa'],
       ['Se aplica al cierre de una unidad o periodo.','Sumativa'],
       ['Su propósito principal es mejorar el aprendizaje mientras ocurre.','Formativa'],
@@ -461,17 +733,27 @@ const RETOS = [
       ['Ejemplo: un ticket de salida al terminar la clase.','Formativa'],
       ['Ejemplo: el examen final del periodo.','Sumativa'],
       ['Permite al docente ajustar la enseñanza sobre la marcha.','Formativa'],
-      ['Promueve la autoevaluación y la coevaluación frecuentes.','Formativa'],
-      ['Sirve para tomar decisiones de promoción o acreditación.','Sumativa'],
-      ['Ejemplo: una prueba estandarizada externa.','Sumativa']
-    ], ['Formativa','Sumativa'], api, () => api.pass(), true);
+      ['Promueve la autoevaluación y la coevaluación frecuentes.','Formativa']
+    ], ['Formativa','Sumativa'], api, () => { A.hidden = true; B.hidden = false; Sfx.ok(); }, true);
+    B.append(h('h3',{text:'Parte 2 · La lupa del alquimista'}),
+      h('p',{text:'Una buena retroalimentación es oportuna, clara y específica. Analiza cada comentario e indica qué virtud le falta, o si cumple las tres. Necesitas las 8 correctas.'}));
+    classify(B, [
+      ['Al terminar el año escolar, el docente devuelve el ensayo del primer periodo con la nota «Revisa tus citas». Ya no hay forma de corregirlo.','Le falta ser oportuna'],
+      ['Camila expuso en marzo; en noviembre recibe por fin los comentarios sobre cómo mejorar sus diapositivas.','Le falta ser oportuna'],
+      ['A un estudiante de séptimo grado: «Tu argumentación adolece de cohesión epistémica y de isomorfismo entre premisas».','Le falta ser clara'],
+      ['Al margen del taller, a mano y con abreviaturas: «rev. coh. y cit. s/ norm., ver crit. 3b».','Le falta ser clara'],
+      ['«Buen trabajo, sigue así.»','Le falta ser específica'],
+      ['«Le falta un poco más; tú puedes hacerlo mejor.»','Le falta ser específica'],
+      ['Mientras resuelve el taller: «En el ejercicio 3 confundiste área con perímetro; revisa la fórmula del recuadro azul y vuelve a intentarlo».','Cumple las tres'],
+      ['Sobre el borrador, antes de la entrega final: «Tu introducción presenta bien el tema; en la conclusión, retoma la pregunta inicial y respóndela con tus dos hallazgos principales».','Cumple las tres']
+    ], ['Le falta ser oportuna','Le falta ser clara','Le falta ser específica','Cumple las tres'], api, () => api.pass());
   }
 },
-/* 5 */ {
-  g:'oraculo', title:'La Escalera del Oráculo',
-  intro:'«Una retroalimentación que transforma se sube peldaño a peldaño. Enciende las runas en el orden correcto y luego dime a qué peldaño pertenece cada voz… cuidado: algunas voces no son retroalimentación, son juicios.»',
-  hint:'El orden es: Clarificar → Valorar → Expresar inquietudes → Sugerir. Clarificar pide al estudiante explicar; Expresar inquietudes cuestiona una decisión para que él mismo reflexione; Sugerir propone un camino concreto.',
-  clue:'Letras ocultas en la escalera: O · T · C · E · N · R · I · M · I · C · E. Ordénalas para completar el lema: «Menos juicios, más preguntas. Menos correcciones, más …»',
+/* 5 · EVALUAR */ {
+  g:'oraculo', title:'Los Dados del Oráculo', syl:'PREN',
+  intro:'«Una retroalimentación que transforma se sube peldaño a peldaño. Enciende las runas en orden y luego deja que mis dados decidan: en cada lanzamiento tendrás que juzgar cuál voz pertenece al peldaño que te toque… y cuál es solo un juicio disfrazado.»',
+  hint:'El orden es: Clarificar → Valorar → Expresar inquietudes → Sugerir. Clarificar pide al estudiante que explique; Valorar reconoce algo concreto; Expresar inquietudes plantea una duda o preocupación para que él reflexione; Sugerir propone un camino. Un juicio descalifica y no deja nada por hacer.',
+  clue:'Para ordenar las sílabas: la palabra clave nombra aquello para lo que se evalúa. «Evaluación para el …» (11 letras).',
   render(box, api){
     const STEPS = [['Clarificar','?'],['Valorar','✦'],['Expresar inquietudes','❖'],['Sugerir','✧']];
     const A = h('div',{class:'part'}), B = h('div',{class:'part',hidden:true});
@@ -482,65 +764,119 @@ const RETOS = [
     function drawRunes(){
       runes.innerHTML = ''; seq = 0;
       shuffle(STEPS).forEach(([n,gl]) => {
-        const r = h('button',{class:'rune'}, h('span',{class:'glyph',text:gl}), h('span',{text:n}), h('span',{class:'ord'}));
+        const r = h('button',{class:'rune','data-n':STEPS.findIndex(s=>s[0]===n)}, h('span',{class:'glyph',text:gl}), h('span',{text:n}), h('span',{class:'ord'}));
         r.addEventListener('click', () => {
           if (r.classList.contains('lit')) return;
           if (n === STEPS[seq][0]){ seq++; r.classList.add('lit'); r.querySelector('.ord').textContent = 'Peldaño ' + seq; Sfx.ok();
-            if (seq === 4){ feedback(fa,'ok','¡La escalera brilla completa!'); setTimeout(()=>{ A.hidden = true; B.hidden = false; }, 700); } }
+            if (seq === 4){ feedback(fa,'ok','¡La escalera brilla completa! Las runas te conceden una vida extra.'); giveLife(1, 'Las runas te conceden una vida extra.'); setTimeout(()=>{ A.hidden = true; B.hidden = false; }, 1100); } }
           else { feedback(fa,'bad','Esa runa no corresponde a este peldaño. Las runas se apagan.'); if (api.lose('Runa fuera de orden.')) drawRunes(); }
         });
         runes.append(r);
       });
     }
-    A.append(h('h3',{text:'Parte 1 · Enciende la escalera'}), h('p',{text:'Toca las runas en el orden en que se sube la escalera de la retroalimentación. Un error apaga todas las runas y cuesta una vida.'}), runes, fa);
+    A.append(h('h3',{text:'Parte 1 · Enciende la escalera'}), h('p',{text:'Toca las runas en el orden en que se sube la escalera de la retroalimentación. Un error apaga todas las runas y cuesta una vida; si las enciendes todas, las runas te regalan una vida extra.'}), runes, fa);
     drawRunes();
-    B.append(h('h3',{text:'Parte 2 · Las voces de la escalera'}), h('p',{text:'¿A qué peldaño pertenece cada frase? Dos de ellas no son retroalimentación sino juicios. Necesitas las 10 correctas.'}));
-    classify(B, [
-      ['«¿Puedes contarme con tus palabras qué buscaste lograr en esta parte?»','Clarificar'],
-      ['«¿Qué información usaste para desarrollar esta idea?»','Clarificar'],
-      ['«Me parece muy claro tu propósito y la organización de tus ideas.»','Valorar'],
-      ['«Usaste buenos ejemplos que fortalecen tu argumento.»','Valorar'],
-      ['«Me surge una duda: ¿por qué elegiste esta fuente y no otras más recientes?»','Expresar inquietudes'],
-      ['«¿Cómo crees que se fortalece tu conclusión con este punto?»','Expresar inquietudes'],
-      ['«Podrías comparar con otra perspectiva para dar más profundidad a tu análisis.»','Sugerir'],
-      ['«Te sugiero revisar la guía de citas para fortalecer tus referencias.»','Sugerir'],
-      ['«Esto está mal. Hazlo de nuevo.»','Juicio (no es retroalimentación)'],
-      ['«No entiendo nada de lo que escribiste.»','Juicio (no es retroalimentación)']
-    ], ['Clarificar','Valorar','Expresar inquietudes','Sugerir','Juicio (no es retroalimentación)'], api, () => api.pass());
+
+    /* Parte 2: juego de dados */
+    const NEED = 5; let wins = 0, jokerUsed = false, busy = false;
+    const used = {}; Object.keys(VOCES).forEach(k => used[k] = []);
+    const take = cat => { if (used[cat].length >= VOCES[cat].length) used[cat] = []; const v = pick(VOCES[cat].filter(x=>!used[cat].includes(x))); used[cat].push(v); return v; };
+    const die = makeDie();
+    const pips = h('div',{class:'pips','aria-label':'Aciertos'});
+    const drawPips = () => { pips.innerHTML = ''; for (let i=0;i<NEED;i++) pips.append(h('i',{class:i<wins?'on':''})); };
+    const rollBtn = h('button',{class:'btn',id:'dice-roll'},'Lanzar el dado');
+    const qbox = h('div',{class:'part',style:'width:100%'});
+    const fb = h('div',{class:'feedback',hidden:true});
+    function ask(face){
+      qbox.innerHTML = '';
+      if (face === 6 && !jokerUsed){
+        jokerUsed = true; S.score += 50; const sc = $('#hud-score'); if (sc) sc.textContent = num(S.score);
+        Sfx.coin(); feedback(fb,'ok','¡Comodín! El Oráculo te regala esta ronda y +50 puntos.'); win(); return;
+      }
+      if (face === 6) face = 1 + Math.floor(Math.random()*5);
+      const target = face === 5 ? 'Juicio' : RUNGS[face-1];
+      const others = shuffle(Object.keys(VOCES).filter(k=>k!==target)).slice(0,2);
+      const opts = shuffle([[take(target),1], [take(others[0]),0], [take(others[1]),0]]);
+      const q = face === 5 ? 'Cara 5 · ¿Cuál de estas voces NO es retroalimentación, sino un juicio?' : `Cara ${face} · ¿Cuál de estas voces pertenece al peldaño «${target}»?`;
+      qbox.append(h('p',{style:'font-weight:700',text:q}), h('div',{class:'choices'}, opts.map(([t,ok]) => h('button',{class:'choice','data-ok':ok,text:t,onclick:()=>{
+        qbox.innerHTML = '';
+        if (ok){ Sfx.ok(); feedback(fb,'ok','¡Buen juicio! Ronda ganada.'); win(); }
+        else { feedback(fb,'bad','Esa voz no era. Lanza de nuevo.'); if (api.lose('Voz equivocada.')) { rollBtn.disabled = false; } }
+      }}))));
+    }
+    function win(){ wins++; drawPips(); if (wins >= NEED){ rollBtn.disabled = true; setTimeout(()=>api.pass(), 700); } else rollBtn.disabled = false; }
+    rollBtn.addEventListener('click', async () => {
+      if (busy) return; busy = true; rollBtn.disabled = true; fb.hidden = true; qbox.innerHTML = '';
+      const n = await die.roll(); busy = false;
+      if (!api.alive()) return;
+      ask(n);
+    });
+    drawPips();
+    B.append(h('h3',{text:'Parte 2 · Los dados del Oráculo'}),
+      h('p',{text:`Lanza el dado. Según la cara, tendrás que reconocer entre tres voces la que corresponde. Gana ${NEED} rondas para superar el piso; cada error cuesta una vida.`}),
+      h('div',{class:'dicebox'},
+        h('div',{class:'faces-key'}, h('span',{}, h('b',{text:'1 '}),'Clarificar'), h('span',{}, h('b',{text:'2 '}),'Valorar'), h('span',{}, h('b',{text:'3 '}),'Expresar inquietudes'), h('span',{}, h('b',{text:'4 '}),'Sugerir'), h('span',{}, h('b',{text:'5 '}),'Detecta el juicio'), h('span',{}, h('b',{text:'6 '}),'Comodín (una vez)')),
+        die, pips, rollBtn, fb, qbox));
   }
 },
-/* 6 */ {
-  g:'golem', title:'La Cerradura Viviente',
-  intro:'«Soy la última puerta. Solo me abro con el código de cuatro runas y la palabra del lema. Todo lo que necesitas está escrito en tu Grimorio.»',
-  hint:'Cada pista del Grimorio da un dígito, en orden (1.º, 2.º, 3.º, 4.º). Repasa: emociones con vocal inicial, mitos desenmascarados, posición del engranaje y esencias formativas. La palabra tiene 11 letras.',
+/* 6 · CREAR */ {
+  g:'golem', title:'La Cerradura Viviente', syl:null,
+  intro:'«Soy la última puerta. Ábreme con el código de cuatro runas y la palabra clave que armaste sílaba a sílaba. Y antes de salir, demuéstrame que puedes crear: construye una retroalimentación completa para una estudiante real.»',
+  hint:'Cada pista del Grimorio da un dígito, en orden. La palabra clave completa la frase «Evaluación para el …». En la segunda parte, recuerda: clarificar pregunta qué quiso hacer; valorar reconoce algo concreto; expresar inquietudes plantea una duda; sugerir propone un cambio realizable. Un elogio vacío o una orden no suben la escalera.',
   clue:null,
   render(box, api){
+    const A = h('div',{class:'part'}), B = h('div',{class:'part',hidden:true});
+    box.append(A,B);
     const vals = [0,0,0,0];
-    const p = h('div',{class:'part'});
     const lock = h('div',{class:'lock'});
     const fb = h('div',{class:'feedback',hidden:true});
-    const word = h('input',{id:'final-word',autocomplete:'off',placeholder:'Escribe la palabra del lema'});
     vals.forEach((_,i) => {
       const d = h('div',{class:'d',text:'0'});
       const set = n => { vals[i] = (n+10)%10; d.textContent = vals[i]; Sfx.click(); };
       lock.append(h('div',{class:'dial'}, h('button',{'aria-label':`Subir runa ${i+1}`,onclick:()=>set(vals[i]+1)},'▲'), d, h('button',{'aria-label':`Bajar runa ${i+1}`,onclick:()=>set(vals[i]-1)},'▼')));
     });
-    p.append(h('p',{text:'Gira las cuatro runas numéricas y escribe la palabra que completa el lema. Ambas deben ser correctas.'}),
+    let word = [];
+    const slot = h('div',{class:'wordslot',id:'wordslot','aria-live':'polite'});
+    const bank = h('div',{class:'sylbank'});
+    const syls = S.syls.length ? S.syls.slice() : RETOS.filter(r=>r.syl).map(r=>r.syl);
+    function drawWord(){
+      slot.innerHTML = ''; bank.innerHTML = '';
+      if (!word.length) slot.append(h('span',{class:'note',text:'Toca las sílabas en orden para formar la palabra clave'}));
+      word.forEach(i => slot.append(h('span',{class:'syl',text:syls[i]})));
+      syls.forEach((s,i) => bank.append(h('button',{class:'syl','data-s':s,disabled:word.includes(i),text:s,onclick:()=>{ Sfx.click(); word.push(i); drawWord(); }})));
+    }
+    drawWord();
+    A.append(h('h3',{text:'Parte 1 · El código y la palabra clave'}),
+      h('p',{text:'Gira las cuatro runas numéricas con las pistas del Grimorio y ordena las sílabas que ganaste en cada piso. Ambas cosas deben ser correctas.'}),
       h('div',{class:'row-actions'}, h('button',{class:'btn ghost small',onclick:()=>toggleGrimoire(true)},'Abrir Grimorio')),
-      lock, h('div',{class:'field'}, h('label',{for:'final-word',class:'label',text:'«Menos correcciones, más …»'}), word), fb,
-      h('div',{class:'row-actions'}, h('button',{class:'btn',onclick:check},'Abrir la cerradura')));
-    box.append(p);
+      lock, h('div',{class:'label',style:'text-align:center',text:'Palabra clave'}), slot, bank,
+      h('div',{class:'row-actions',style:'justify-content:center'}, h('button',{class:'btn ghost small',onclick:()=>{ word = []; drawWord(); Sfx.click(); }},'Borrar palabra')),
+      fb, h('div',{class:'row-actions'}, h('button',{class:'btn',id:'lock-ok',onclick:check},'Abrir la cerradura')));
     function check(){
-      const codeOk = vals.join('') === '3536', wordOk = norm(word.value) === 'CRECIMIENTO';
-      if (codeOk && wordOk){ feedback(fb,'ok','La piedra cruje… ¡la cerradura cede!'); setTimeout(()=>api.pass(), 600); return; }
-      feedback(fb,'bad', `Runas numéricas: ${codeOk?'correctas':'incorrectas'} · Palabra: ${wordOk?'correcta':'incorrecta'}.`);
+      const codeOk = vals.join('') === CODE, wordOk = word.map(i=>syls[i]).join('') === KEYWORD;
+      if (codeOk && wordOk){ feedback(fb,'ok','La piedra cruje… ¡la cerradura cede! Queda un último sello.'); Sfx.unlock(); setTimeout(()=>{ A.hidden = true; B.hidden = false; }, 900); return; }
+      feedback(fb,'bad', `Runas numéricas: ${codeOk?'correctas':'incorrectas'} · Palabra clave: ${wordOk?'correcta':'incorrecta'}.`);
       api.lose('La cerradura rechazó la combinación.');
     }
+    B.append(h('h3',{text:'Parte 2 · Forja tu retroalimentación'}),
+      h('div',{class:'casebox'}, h('b',{text:'El caso: '}), 'Valentina, de 8.º, entrega un informe de laboratorio sobre la germinación de semillas. Tiene buenas fotos y los datos ordenados en una tabla, pero su conclusión solo repite el título y no explica qué pasó con las semillas que no recibieron luz.'),
+      h('p',{text:'Construye una retroalimentación completa: asigna a cada peldaño la frase que le corresponde y descarta las que no sirven. Necesitas las 8 correctas.'}));
+    const NO = 'No sirve para la escalera';
+    classify(B, [
+      ['«Valentina, cuéntame: ¿qué querías demostrar con las semillas que dejaste sin luz?»','1 · Clarificar'],
+      ['«Tus fotos y la tabla permiten seguir el experimento día a día; está muy bien organizado.»','2 · Valorar'],
+      ['«Me pregunto si tu conclusión cuenta lo que observaste: ¿qué pasó con las semillas que no recibieron luz?»','3 · Expresar inquietudes'],
+      ['«Podrías reescribir la conclusión usando dos datos de tu tabla para explicar la diferencia entre los dos grupos.»','4 · Sugerir'],
+      ['«La conclusión está mal. Repítela.»',NO],
+      ['«Buen trabajo, sigue así.»',NO],
+      ['«Te faltó esforzarte más en la parte final.»',NO],
+      ['«Tienes 3,5. Revisa la rúbrica.»',NO]
+    ], ['1 · Clarificar','2 · Valorar','3 · Expresar inquietudes','4 · Sugerir',NO], api, () => api.pass());
   }
 }
 ];
 
-/* -------- componentes de reto reutilizables  -------- */
+/* -------- componentes de reto reutilizables -------- */
 function feedback(box, kind, msg){
   let fb = box.classList.contains('feedback') ? box : box.querySelector(':scope > .feedback.auto');
   if (!fb){ fb = h('div',{class:'feedback auto'}); box.append(fb); }
@@ -549,12 +885,12 @@ function feedback(box, kind, msg){
 function classify(box, rows, options, api, onDone, seg2){
   const answers = new Map();
   const list = h('div',{class:'items'});
-  shuffle(rows).forEach(([text, right], idx) => {
+  shuffle(rows).forEach(([text, right]) => {
     const id = 'c' + Math.random().toString(36).slice(2,8);
     let ctrl;
     if (options.length <= 2){
       ctrl = h('div',{class:'seg' + (seg2?' v':''),role:'group','aria-label':'Opciones'});
-      options.forEach(o => { const b = h('button',{'data-v':o[0],text:o}); b.addEventListener('click',()=>{ Sfx.click(); answers.set(id,o); ctrl.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); }); ctrl.append(b); });
+      options.forEach(o => { const b = h('button',{'data-v':o[0],'data-o':o,'aria-pressed':'false',text:o}); b.addEventListener('click',()=>{ Sfx.click(); answers.set(id,o); ctrl.querySelectorAll('button').forEach(x=>{ x.classList.toggle('on',x===b); x.setAttribute('aria-pressed', x===b); }); }); ctrl.append(b); });
     } else {
       ctrl = h('select',{id,'aria-label':'Elige una opción'}, h('option',{value:'',text:'— Elige —'}), options.map(o=>h('option',{value:o,text:o})));
       ctrl.addEventListener('change',()=>{ Sfx.click(); answers.set(id, ctrl.value); });
@@ -562,7 +898,7 @@ function classify(box, rows, options, api, onDone, seg2){
     list.append(h('div',{class:'item','data-id':id,'data-r':right}, h('p',{text:text}), ctrl));
   });
   const fb = h('div',{class:'feedback',hidden:true});
-  const btn = h('button',{class:'btn'},'Comprobar');
+  const btn = h('button',{class:'btn check'},'Comprobar');
   btn.addEventListener('click', () => {
     const items = [...list.children];
     const missing = items.filter(it => !answers.get(it.dataset.id)).length;
@@ -577,12 +913,12 @@ function mcq(box, qs, api, onDone){
   const wrap = h('div',{class:'items'});
   const groups = qs.map(([q, opts], qi) => {
     const name = 'q' + qi + Math.random().toString(36).slice(2,6);
-    const g = h('fieldset',{class:'mcq'}, h('legend',{class:'label',text:'Pregunta ' + (qi+1)}), h('p',{style:'margin:0;font-weight:600',text:q}),
-      shuffle(opts).map(([t,ok],oi) => { const id = name+'-'+oi; return h('label',{for:id}, h('input',{type:'radio',name,id,value:ok,onchange:()=>Sfx.click()}), h('span',{text:t})); }));
-    wrap.append(g); return name;
+    wrap.append(h('fieldset',{class:'mcq'}, h('legend',{class:'label',text:'Pregunta ' + (qi+1)}), h('p',{style:'margin:0;font-weight:600',text:q}),
+      shuffle(opts).map(([t,ok],oi) => { const id = name+'-'+oi; return h('label',{for:id}, h('input',{type:'radio',name,id,value:ok,onchange:()=>Sfx.click()}), h('span',{text:t})); })));
+    return name;
   });
   const fb = h('div',{class:'feedback',hidden:true});
-  const btn = h('button',{class:'btn'},'Comprobar');
+  const btn = h('button',{class:'btn check'},'Comprobar');
   btn.addEventListener('click', () => {
     const vals = groups.map(n => { const c = box.querySelector(`input[name="${n}"]:checked`); return c ? c.value : null; });
     if (vals.includes(null)){ feedback(fb,'bad','Responde las tres preguntas.'); return; }
@@ -592,156 +928,301 @@ function mcq(box, qs, api, onDone){
   });
   box.append(wrap, fb, h('div',{class:'row-actions'}, btn));
 }
-
 /* ---------------- pantallas ---------------- */
 const app = $('#app');
-function show(view){ S.view = view; app.innerHTML = ''; window.scrollTo(0,0); }
+function show(view){ S.view = view; app.innerHTML = ''; document.querySelectorAll('.overlay,.grimoire,.doors').forEach(x=>x.remove()); window.scrollTo(0,0); }
 
 function renderIntro(){
   show('intro');
   const err = h('div',{class:'err'});
-  const nombre = h('input',{id:'reg-nombre',maxlength:'60',autocomplete:'name',placeholder:'Ej.: Marta Rodríguez',value:S.nombre||''});
-  const grupo = h('input',{id:'reg-grupo',maxlength:'60',placeholder:'Ej.: Colegio San José · Grado 9B',value:S.grupo||''});
-  const start = h('button',{class:'btn',type:'submit'},'Entrar a la Torre');
+  const nombre = h('input',{id:'reg-nombre',maxlength:'60',autocomplete:'name',placeholder:'Ej.: Marta Rodríguez'});
+  const grupo = h('input',{id:'reg-grupo',maxlength:'60',placeholder:'Ej.: Colegio San José · Área de Ciencias'});
   const form = h('form',{class:'reg'},
     h('h2',{style:'font-size:1.25rem;color:var(--gold2)',text:'Registro de expedicionarios'}),
     h('div',{class:'field'}, h('label',{for:'reg-nombre',class:'label',text:'Nombre completo o del equipo'}), nombre),
-    h('div',{class:'field'}, h('label',{for:'reg-grupo',class:'label',text:'Institución, grado o grupo'}), grupo),
-    err, start,
-    h('p',{class:'note',text: API ? 'Tu puntaje quedará registrado en el panel docente.' : 'Modo de prueba: el registro compartido aún no está configurado, así que los puntajes solo se guardan en este dispositivo.'}));
-  form.addEventListener('submit', async e => {
+    h('div',{class:'field'}, h('label',{for:'reg-grupo',class:'label',text:'Institución, área o grupo'}), grupo),
+    err, h('button',{class:'btn',type:'submit'},'Entrar a la Torre'),
+    h('p',{class:'note',id:'reg-note',text:regNote()}));
+  form.addEventListener('submit', e => {
     e.preventDefault();
     const n = nombre.value.trim(), g = grupo.value.trim();
     if (n.length < 3){ err.textContent = 'Escribe un nombre de al menos 3 letras.'; nombre.focus(); return; }
-    if (!g){ err.textContent = 'Escribe tu institución, grado o grupo.'; grupo.focus(); return; }
-    S.nombre = n; S.grupo = g; S.restarts = 0; S.bestScore = 0;
+    if (!g){ err.textContent = 'Escribe tu institución, área o grupo.'; grupo.focus(); return; }
+    S.nombre = n; S.grupo = g; S.restarts = 0; S.bestScore = 0; S.giftsSeen = 0; S.pendingLives = 0;
     S.docId = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
-    saveRemote({ nombre:n, grupo:g, puntos:0, mejorPuntaje:0, retoActual:1, retosSuperados:0, reinicios:0, estado:'en curso', inicio:new Date().toISOString(), tiempoSeg:0, compromiso:'' });
-    Sfx.unlock(); startRun();
+    saveRemote({ nombre:n, grupo:g, puntos:0, mejorPuntaje:0, retoActual:1, retosSuperados:0, reinicios:0, vidas:MAX_LIVES, vidasExtra:0, estado:'en curso', inicio:new Date().toISOString(), tiempoSeg:0, compromiso:'' }, true);
+    Sfx.unlock(); renderStory();
   });
+  const saved = loadRun();
+  const resume = saved ? h('div',{class:'resume'},
+    h('div',{}, h('b',{style:'font-family:var(--f-head);color:var(--teal)',text:'Expedición en pausa'}), h('br'), `${saved.nombre} · Piso ${saved.reto+1} de 6 · ${num(saved.score)} puntos · quedan ${fmtTime(TOTAL_SEC - saved.elapsed)}`),
+    h('div',{class:'row-actions'}, h('button',{class:'btn small',id:'resume-btn',onclick:()=>resumeRun(saved)},'Continuar expedición'), h('button',{class:'btn ghost small',onclick:()=>{ store.del('torre-run'); renderIntro(); }},'Descartar'))) : null;
   app.append(h('div',{class:'wrap screen'},
     h('section',{class:'hero'},
       h('div',{class:'screen',style:'gap:18px'},
         h('h1',{class:'hero-title'}, h('span',{text:'Escape room · Evaluación para el aprendizaje'}), 'La Torre de la Evaluación'),
-        h('p',{class:'lore',text:'La Sombra del Juicio ha sellado la Torre. Allí dentro, evaluar se volvió sinónimo de calificar, nadie pregunta y nadie escucha. Seis guardianes custodian las llaves de la evaluación formativa. Tienes 30 minutos para superar sus pruebas, reunir las pistas del Grimorio y abrir la última cerradura.'}),
+        h('p',{class:'lore',text:'La Sombra del Juicio ha sellado la Torre. Allí dentro, evaluar se volvió sinónimo de calificar; nadie pregunta y nadie escucha. Seis guardianes custodian sus seis pisos. Tienes 30 minutos para subirlos todos, reunir las pistas y las sílabas de la palabra clave, y abrir la última cerradura.'}),
         h('div',{class:'rules'},
-          h('div',{class:'rule'}, h('b',{text:'6 retos · 30 min'}), 'Definición, retroalimentación, mitos, proceso, sumativa vs. formativa, escalera y una cerradura final.'),
-          h('div',{class:'rule'}, h('b',{text:'3 vidas por reto'}), 'Si las pierdes todas, o se acaba el tiempo, vuelves a empezar desde el primer reto.'),
-          h('div',{class:'rule'}, h('b',{text:'Puntos'}), '1000 por reto, −200 por vida perdida, −100 por pista. Bono por tiempo sobrante.')),
-        form),
-      h('div',{class:'screen',style:'gap:18px'},
+          h('div',{class:'rule'}, h('b',{text:'6 pisos · 30 minutos'}), 'Seis guardianes, seis pruebas distintas. Cada una exige un poco más que la anterior.'),
+          h('div',{class:'rule'}, h('b',{text:'5 vidas por piso'}), 'Si las pierdes todas, o se acaba el tiempo, vuelves a empezar desde el piso 1. Hay vidas extra escondidas.'),
+          h('div',{class:'rule'}, h('b',{text:'Puntos y dados'}), '1000 por piso, −100 por vida y −100 por pista. Tras cada piso lanzas el dado de la fortuna.'),
+          h('div',{class:'rule'}, h('b',{text:'Sílabas y pistas'}), 'Cada piso entrega una sílaba y una pista. Las necesitarás en la cerradura final.')),
+        resume, form),
+      h('div',{class:'hero-side'},
         h('figure',{class:'portal',style:'margin:0'}, h('img',{src:IMG.tiempo,alt:'Guardián encapuchado con un reloj de arena'}),
           h('figcaption',{class:'cap'}, h('b',{style:'font-family:var(--f-head);color:var(--gold2)',text:'Cronos, Guardián del Reloj'}), h('br'), '«Cada grano de arena es un segundo de aprendizaje. No los desperdicies.»')),
-        h('div',{class:'board',id:'board'}))),
+        h('div',{class:'board','data-board':'1'}))),
     h('div',{class:'foot'},
       h('span',{class:'note',text:'Activa el sonido de tu dispositivo: la Torre tiene voz propia.'}),
-      h('button',{class:'btn ghost small',onclick:renderTeacherLogin},'Acceso docente'))));
+      h('button',{class:'btn ghost small',id:'teacher-btn',onclick:renderTeacherLogin},'Acceso docente'))));
   renderBoard();
 }
-
 function renderBoard(){
-  const b = $('#board'); if (!b) return;
-  b.innerHTML = '';
-  b.append(h('div',{class:'label',text:'Salón de los Valientes'}));
-  const top = players.slice().sort((a,c)=>(c.mejorPuntaje||0)-(a.mejorPuntaje||0) || (a.tiempoSeg||1e9)-(c.tiempoSeg||1e9)).filter(p=>(p.mejorPuntaje||0)>0).slice(0,8);
-  if (!top.length){ b.append(h('p',{class:'note',text:'Aún nadie ha escapado de la Torre. El primer nombre que aparezca aquí puede ser el tuyo.'})); return; }
-  b.append(h('ol',{}, top.map((p,i)=>h('li',{}, h('span',{class:'n',text:i+1}), h('span',{class:'who'}, p.nombre||'—', ' ', h('small',{text:'· '+(p.grupo||'')})), h('b',{text:(p.mejorPuntaje||0).toLocaleString('es-CO')})))));
+  const top = players.filter(p=>p.estado==='completado' && (Number(p.mejorPuntaje)||0)>0)
+    .sort((a,c)=>(Number(c.mejorPuntaje)||0)-(Number(a.mejorPuntaje)||0) || (Number(a.tiempoSeg)||1e9)-(Number(c.tiempoSeg)||1e9)).slice(0,5);
+  document.querySelectorAll('[data-board]').forEach(b => {
+    b.innerHTML = '';
+    b.append(h('div',{class:'label',text:'Salón de los Valientes · Top 5'}));
+    if (!top.length){ b.append(h('p',{class:'note',style:'margin:8px 0 0',text:'Aún nadie ha escapado de la Torre. El primer nombre aquí puede ser el tuyo.'})); return; }
+    b.append(h('ol',{}, top.map((p,i)=>h('li',{}, h('span',{class:'n',text:i+1}), h('span',{class:'who'}, p.nombre||'—', p.id===S.docId ? ' (tú)' : ''), h('b',{text:num(p.mejorPuntaje)}), h('span',{class:'t',text:fmtTime(p.tiempoSeg)})))));
+  });
+}
+function renderStory(){
+  show('story');
+  app.append(h('div',{class:'wrap'}, h('div',{class:'win',style:'max-width:820px;margin:0 auto'},
+    h('img',{src:IMG.tiempo,alt:'Cronos',style:'width:170px;border-radius:10px;border:1px solid var(--line)'}),
+    h('div',{class:'label',text:'Antes de entrar'}),
+    h('h2',{style:'font-size:1.7rem;color:var(--gold2)',text:`Bienvenido/a, ${S.nombre}`}),
+    h('p',{style:'max-width:60ch;text-align:left',text:'«Hace mucho, en esta Torre se evaluaba para aprender. Un día llegó la Sombra del Juicio y convenció a todos de que evaluar era solo poner notas. Las preguntas se apagaron, las emociones se escondieron y la retroalimentación se volvió sentencia.»'}),
+    h('p',{style:'max-width:60ch;text-align:left',text:'«Para romper el hechizo deberás subir piso a piso y vencer la prueba de cada guardián. Cada uno te dará una sílaba y una pista: guárdalas en tu Grimorio. Antes de entrar, los guardianes quieren recordarte lo que custodian. Escúchalos con atención: mi reloj empezará a correr cuando cruces la puerta.»'}),
+    h('button',{class:'btn',id:'story-go',onclick:()=>renderRecap(0)},'Escuchar a los guardianes'))));
+}
+const REPASO = [
+  { g:'cronista', t:'Evaluar para aprender', q:'«Yo guardo la memoria de la Torre. Recuerda de dónde partimos.»', p:[
+    'La evaluación para el aprendizaje está orientada a motivar a los estudiantes de forma intrínseca, es decir, desde adentro (Clark, 2008, citado en Montoya, 2018).',
+    'También busca generar capacidades para seguir aprendiendo a lo largo de la vida.',
+    'La retroalimentación aporta información útil para optimizar el aprendizaje cuando es oportuna, clara y específica.'] },
+  { g:'duende', t:'Mitos que aún persisten', q:'«Yo susurro mitos. Estas son las verdades que más me molestan.»', p:[
+    'Evaluar no es lo mismo que calificar: la nota es apenas una parte.',
+    'No solo el profesor evalúa: la autoevaluación y la coevaluación también cuentan.',
+    'La evaluación no ocurre únicamente al final: acompaña todo el proceso.',
+    'Las emociones influyen en cómo vivimos una evaluación.'] },
+  { g:'inventor', t:'El proceso de evaluación', q:'«Mi máquina tiene seis engranajes, y el orden importa.»', p:[
+    'Todo comienza con un diagnóstico inicial y la definición de los objetivos.',
+    'Los objetivos se desagregan en indicadores y con ellos se diseñan y aplican los instrumentos.',
+    'Luego se recopila y analiza la información para decidir sobre resultados, actividades e instrumentos.',
+    'El ciclo se cierra usando esa información para reflexionar y hacer recomendaciones pertinentes, oportunas y concretas.'] },
+  { g:'alquimista', t:'Formativa y sumativa', q:'«Dos esencias distintas que no se contraponen: se complementan.»', p:[
+    'Elegir una u otra depende del propósito de la evaluación.',
+    'La evaluación formativa ocurre durante el proceso: sirve para mejorar y ajustar el camino.',
+    'La evaluación sumativa ocurre al cierre: sirve para valorar y certificar el logro alcanzado.'] },
+  { g:'oraculo', t:'La escalera de la retroalimentación', q:'«Cuatro peldaños que se suben en orden. Primero se pregunta; el juicio no tiene escalón.»', p:[
+    'Clarificar: hacer preguntas para entender lo que el estudiante quiso lograr.',
+    'Valorar: destacar de forma constructiva las fortalezas del trabajo.',
+    'Expresar inquietudes: plantear dudas o desacuerdos como preguntas, para que él mismo reflexione.',
+    'Sugerir: ofrecer recomendaciones claras y descriptivas para mejorar.'] },
+  { g:'golem', t:'Lo que te espera arriba', q:'«Soy la última puerta. Llega preparado.»', p:[
+    'En cada piso ganarás una sílaba y una pista. Las necesitarás todas para abrirme.',
+    'Tienes 5 vidas por piso y 30 minutos en total. Si te quedas sin vidas o sin tiempo, vuelves al piso 1.',
+    'Al final tendrás que construir una retroalimentación completa y dejar escrito tu compromiso.'] }
+];
+function renderRecap(i){
+  show('recap'); Sfx.flip();
+  const R = REPASO[i], last = i === REPASO.length - 1;
+  app.append(h('div',{class:'wrap screen'},
+    h('div',{class:'foot',style:'border:0;padding:0'},
+      h('div',{}, h('div',{class:'label',text:`Antes de subir · Repaso ${i+1} de ${REPASO.length}`}), h('h1',{style:'font-size:clamp(1.4rem,3vw,2rem);color:var(--gold2)',text:'Los guardianes te recuerdan'})),
+      h('div',{class:'dots'}, REPASO.map((_,k)=>h('i',{class:k<=i?'on':''})))),
+    h('section',{class:'recap'},
+      h('img',{src:IMG[R.g],alt:GUARD[R.g].name}),
+      h('div',{class:'rhead'},
+        h('div',{class:'label',text:GUARD[R.g].name}),
+        h('h2',{text:R.t}),
+        h('p',{class:'speech',text:R.q})),
+      h('div',{class:'rbody'},
+        h('ul',{}, R.p.map(x=>h('li',{text:x}))),
+        h('p',{class:'note',style:'margin:0',text:'El reloj todavía no corre. Tómate el tiempo de leer.'}),
+        h('div',{class:'row-actions'},
+          i > 0 ? h('button',{class:'btn ghost',onclick:()=>renderRecap(i-1)},'Anterior') : null,
+          last ? h('button',{class:'btn',id:'recap-go',onclick:()=>startRun()},'Cruzar la puerta y empezar')
+               : h('button',{class:'btn',id:'recap-next',onclick:()=>renderRecap(i+1)},'Siguiente guardián'))))));
 }
 
 /* -------- partida -------- */
+function elapsed(){ return (Date.now() - S.runStart - S.pausedMs - (S.pauseAt ? Date.now() - S.pauseAt : 0)) / 1000; }
+function pauseTimer(){ if (!S.pauseAt) S.pauseAt = Date.now(); }
+function resumeTimer(){ if (S.pauseAt){ S.pausedMs += Date.now() - S.pauseAt; S.pauseAt = 0; } }
 function startRun(){
-  S.running = true; S.reto = 0; S.score = 0; S.clues = []; S.runStart = Date.now();
+  S.running = true; S.dead = false; S.pendingNext = false; S.pendingLives = 0; S.reto = 0; S.score = 0; S.clues = []; S.syls = []; S.runStart = Date.now(); S.pausedMs = 0; S.pauseAt = 0;
   clearInterval(S.timer); S.timer = setInterval(tickTimer, 1000);
-  Sfx.startDrone();
-  renderReto();
+  Sfx.startDrone(); renderReto();
 }
-function elapsed(){ return (Date.now() - S.runStart)/1000; }
+function resumeRun(r){
+  Object.assign(S, { docId:r.docId, nombre:r.nombre, grupo:r.grupo, reto:r.reto, score:r.score, clues:r.clues||[], syls:r.syls||[], restarts:r.restarts||0, bestScore:r.bestScore||0, giftsSeen:r.giftsSeen||0, pendingLives:r.pendingLives||0 });
+  S.running = true; S.dead = false; S.pendingNext = false; S.runStart = Date.now() - r.elapsed*1000; S.pausedMs = 0; S.pauseAt = 0;
+  clearInterval(S.timer); S.timer = setInterval(tickTimer, 1000);
+  Sfx.unlock(); Sfx.startDrone(); renderReto();
+}
 function tickTimer(){
+  if (!S.running || S.pauseAt) return;
   const left = TOTAL_SEC - elapsed();
   const t = $('#hud-time'); if (t){ t.textContent = fmtTime(left); t.parentElement.classList.toggle('low', left <= 120); }
   if (left <= 60 && left > 0) Sfx.tick();
-  if (left <= 0){ gameOver('Se agotó el tiempo de la expedición.'); }
+  if (left <= 0) gameOver('Se agotó el tiempo de la expedición.');
+  else if (Math.round(left) % 20 === 0) saveRun();
+}
+function sylChips(){
+  const total = RETOS.filter(r=>r.syl).length;
+  return h('div',{class:'syls','aria-label':'Sílabas reunidas'}, Array.from({length:total},(_,i)=> S.syls[i] ? h('span',{class:'syl',text:S.syls[i]}) : h('span',{class:'syl empty',text:'?'})));
+}
+function hudExtras(main){
+  const lbl = (m, short) => (short ? '♪ ' : 'Sonido: ') + (m ? 'no' : 'sí');
+  const mute = h('button',{class:'iconbtn mute-btn','data-short':main?'':'1','aria-label':'Activar o silenciar el sonido'}, lbl(Sfx.muted, !main));
+  mute.addEventListener('click',()=>{ const m = Sfx.toggle(); document.querySelectorAll('.mute-btn').forEach(b=>b.textContent = lbl(m, b.dataset.short === '1')); });
+  return [
+    h('div',{class:'stat'}, h('span',{class:'label',text:'Palabra clave'}), sylChips()),
+    h('span',{class:'sp'}),
+    h('button',{class:'iconbtn',id:main?'grim-btn':null,onclick:()=>toggleGrimoire()}, `Grimorio (${S.clues.length})`),
+    mute];
 }
 function renderHud(){
-  const hearts = h('div',{class:'hearts','aria-label':`${S.lives} vidas`}, Array.from({length:MAX_LIVES},(_,i)=>h('span',{class:'heart'+(i<S.lives?'':' off')})));
-  const muteBtn = h('button',{class:'iconbtn',onclick:()=>{ const m = Sfx.toggle(); muteBtn.textContent = m ? 'Sonido: no' : 'Sonido: sí'; }}, Sfx.muted ? 'Sonido: no' : 'Sonido: sí');
-  return h('header',{class:'hud'}, h('div',{class:'hud-in'},
-    h('div',{class:'stat'}, h('span',{class:'label',text:'Expedicionario'}), h('b',{text:S.nombre})),
-    h('div',{class:'stat'}, h('span',{class:'label',text:`Reto ${S.reto+1} de ${RETOS.length}`}), h('div',{class:'steps'}, RETOS.map((_,i)=>h('i',{class:i<S.reto?'done':i===S.reto?'now':''})))),
+  const hearts = h('div',{class:'hearts',id:'hearts'}); setTimeout(refreshHearts, 0);
+  return [h('header',{class:'hud'}, h('div',{class:'hud-in'},
+    h('div',{class:'stat who'}, h('span',{class:'label',text:'Expedicionario'}), h('b',{text:S.nombre})),
+    h('div',{class:'stat'}, h('span',{class:'label',text:`Piso ${S.reto+1} de ${RETOS.length}`}), h('div',{class:'steps'}, RETOS.map((_,i)=>h('i',{class:i<S.reto?'done':i===S.reto?'now':''})))),
     h('div',{class:'stat'}, h('span',{class:'label',text:'Vidas'}), hearts),
-    h('div',{class:'stat'}, h('span',{class:'label',text:'Puntos'}), h('b',{id:'hud-score',text:S.score.toLocaleString('es-CO')})),
+    h('div',{class:'stat'}, h('span',{class:'label',text:'Puntos'}), h('b',{id:'hud-score',text:num(S.score)})),
     h('div',{class:'stat timer'+(TOTAL_SEC-elapsed()<=120?' low':'')}, h('span',{class:'label',text:'Tiempo'}), h('b',{id:'hud-time',text:fmtTime(TOTAL_SEC-elapsed())})),
-    h('span',{class:'sp'}),
-    h('button',{class:'iconbtn',onclick:()=>toggleGrimoire()}, `Grimorio (${S.clues.length})`),
-    muteBtn));
+    h('div',{class:'hud-extra'}, hudExtras(true)))),
+    h('div',{class:'hud2'}, hudExtras(false))];
 }
 function refreshHearts(){
-  const hs = document.querySelectorAll('.hud .heart'); hs.forEach((x,i)=>x.classList.toggle('off', i >= S.lives));
+  const c = $('#hearts'); if (!c) return;
+  c.innerHTML = ''; c.setAttribute('aria-label', `${S.lives} vidas`);
+  for (let i = 0; i < Math.max(MAX_LIVES, S.lives); i++) c.append(h('span',{class:'heart'+(i<S.lives?'':' off')}));
+}
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t = h('div',{class:'toast',role:'status',text:msg}); document.body.append(t); setTimeout(()=>t.remove(), 5000);
+}
+function giveLife(n, msg){
+  if (!S.running || n <= 0) return;
+  if (S.view === 'game' && !S.dead){ S.lives += n; refreshHearts(); saveRemote({ vidas: S.lives }); toast(msg); }
+  else { S.pendingLives += n; toast(msg + ' La tendrás en el siguiente piso.'); }
+  Sfx.coin(); saveRun();
+}
+function checkGifts(){
+  const me = S.docId && players.find(p => p.id === S.docId); if (!me) return;
+  const g = Number(me.vidasExtra) || 0;
+  if (g > S.giftsSeen){ const n = g - S.giftsSeen; S.giftsSeen = g; giveLife(n, n === 1 ? '¡Tu coach te envió una vida extra!' : `¡Tu coach te envió ${n} vidas extra!`); }
+}
+function doorIntro(R){
+  const ov = h('div',{class:'doors'}, h('div',{class:'door l'}), h('div',{class:'door r'}),
+    h('div',{class:'doortxt'}, h('span',{class:'label',text:'La Torre de la Evaluación'}), h('b',{text:'Piso '+(S.reto+1)}), h('small',{text:R.title})));
+  document.body.append(ov); Sfx.door();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>ov.classList.add('open')));
+  setTimeout(()=>ov.remove(), reduced() ? 900 : 1900);
+  ov.addEventListener('click',()=>ov.remove());
 }
 function renderReto(){
   show('game');
   const R = RETOS[S.reto], G = GUARD[R.g];
-  S.lives = MAX_LIVES; S.livesLost = 0; S.hintUsed = false;
+  const token = ++S.token;
+  S.lives = MAX_LIVES + S.pendingLives; S.pendingLives = 0; S.livesLost = 0; S.hintUsed = false; S.dead = false;
   const hintBox = h('div',{class:'hintbox',hidden:true,text:R.hint});
-  const hintBtn = h('button',{class:'btn ghost small'},'Pedir pista al guardián (−100)');
+  const hintBtn = h('button',{class:'btn ghost small',id:'hint-btn'},'Pedir pista al guardián (−100)');
   hintBtn.addEventListener('click',()=>{ if (S.hintUsed) return; S.hintUsed = true; hintBox.hidden = false; hintBtn.disabled = true; Sfx.click(); });
   const stage = h('section',{class:'stage'},
-    h('div',{class:'label',text:`Reto ${S.reto+1}`}), h('h2',{text:R.title}),
+    h('span',{class:'floor',text:`Piso ${S.reto+1} de 6`}), h('h2',{text:R.title}),
     h('div',{class:'row-actions'}, hintBtn), hintBox);
   const box = h('div',{class:'screen',style:'gap:18px'});
   stage.append(box);
-  app.append(renderHud(), h('div',{class:'wrap'}, h('div',{class:'scene'},
-    h('aside',{class:'guard'}, h('img',{src:IMG[G.img],alt:G.name}), h('div',{class:'gtxt'}, h('h3',{text:G.name}), h('p',{class:'speech',text:R.intro}))),
+  app.append(...renderHud(), h('div',{class:'wrap'}, h('div',{class:'scene'},
+    h('div',{class:'side'},
+      h('aside',{class:'guard'}, h('img',{src:IMG[R.g],alt:G.name}), h('div',{class:'gtxt'}, h('h3',{text:G.name}), h('p',{class:'speech',text:R.intro}))),
+      h('div',{class:'board mini','data-board':'1'})),
     stage)));
+  renderBoard();
   const api = {
-    lose(reason){ return loseLife(reason, stage); },
-    pass(){ passReto(); }
+    alive(){ return token === S.token && S.running && !S.dead; },
+    lose(reason){ return api.alive() ? loseLife(reason, stage) : false; },
+    pass(){ if (api.alive()) passReto(); }
   };
   R.render(box, api);
-  saveRemote({ retoActual: S.reto+1, puntos: S.score });
+  doorIntro(R);
+  saveRemote({ retoActual: S.reto+1, puntos: S.score, vidas: S.lives, estado:'en curso' });
+  saveRun();
 }
 function loseLife(reason, stage){
-  if (!S.running) return false;
   S.lives--; S.livesLost++;
-  Sfx.bad(); refreshHearts();
+  Sfx.bad(); refreshHearts(); saveRemote({ vidas: Math.max(0, S.lives) });
   if (stage){ stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
-  if (S.lives <= 0){ setTimeout(()=>gameOver(reason + ' Perdiste tus tres vidas en este reto.'), 700); return false; }
+  if (S.lives <= 0){ S.dead = true; setTimeout(()=>gameOver(reason + ' Perdiste todas tus vidas en este piso.'), 700); return false; }
   return true;
 }
 function passReto(){
-  if (!S.running) return;
-  const R = RETOS[S.reto];
-  const pts = Math.max(300, 1000 - 200*S.livesLost - (S.hintUsed?100:0));
+  const R = RETOS[S.reto], piso = S.reto;
+  S.dead = true; pauseTimer(); S.pendingNext = true;
+  const pts = Math.max(400, 1000 - 100*S.livesLost - (S.hintUsed?100:0));
   S.score += pts;
   if (R.clue) S.clues.push(R.clue);
+  if (R.syl) S.syls.push(R.syl);
   Sfx.unlock();
-  const last = S.reto === RETOS.length - 1;
-  saveRemote({ puntos: S.score, retosSuperados: S.reto+1, retoActual: Math.min(S.reto+2, RETOS.length) });
-  const ov = h('div',{class:'overlay',role:'dialog','aria-modal':'true'}, h('div',{class:'modal'},
-    h('img',{src:IMG[GUARD[R.g].img],alt:''}),
-    h('div',{class:'label',text:'Reto superado'}),
-    h('h2',{text:R.title}),
-    h('p',{text:`+${pts} puntos${S.livesLost?` (perdiste ${S.livesLost} ${S.livesLost===1?'vida':'vidas'})`:''}${S.hintUsed?' · usaste la pista':''}.`}),
-    R.clue ? h('div',{class:'clue'}, h('div',{class:'label',text:'Nueva página del Grimorio'}), h('p',{style:'margin:6px 0 0',text:R.clue})) : null,
-    h('button',{class:'btn',onclick:()=>{ ov.remove(); if (last) finish(); else { S.reto++; renderReto(); } }}, last ? 'Cruzar la puerta' : 'Subir al siguiente piso')));
+  const last = piso === RETOS.length - 1;
+  saveRemote({ puntos: S.score, retosSuperados: piso+1, retoActual: Math.min(piso+2, RETOS.length) });
+  saveRun();
+  const big = h('div',{class:'bigpts'}, h('span',{id:'bigpts-n',text:'+0'}), h('small',{text:'puntos ganados'}));
+  const detail = h('p',{class:'note',style:'margin:0',text:`Base 1000${S.livesLost?` · −${100*S.livesLost} por ${S.livesLost} ${S.livesLost===1?'vida perdida':'vidas perdidas'}`:' · sin perder vidas'}${S.hintUsed?' · −100 por la pista':''}`});
+  const die = makeDie();
+  const dieMsg = h('p',{class:'note',style:'margin:0;text-align:center',text:'Cada punto del dado vale 20 puntos extra.'});
+  const next = h('button',{class:'btn',id:'next-btn',disabled:true}, last ? 'Cruzar la última puerta' : `Subir al piso ${piso+2}`);
+  const rollBtn = h('button',{class:'btn',id:'fortune-roll'},'Lanzar el dado de la fortuna');
+  rollBtn.addEventListener('click', async () => {
+    rollBtn.disabled = true;
+    const n = await die.roll(); const bonus = n*20;
+    S.score += bonus; Sfx.coin();
+    dieMsg.textContent = `¡Salió ${n}! +${bonus} puntos extra. Total: ${num(S.score)}.`; dieMsg.style.color = 'var(--gold2)';
+    const sc = $('#hud-score'); if (sc) sc.textContent = num(S.score);
+    saveRemote({ puntos: S.score }); saveRun();
+    next.disabled = false; next.focus();
+  });
+  next.addEventListener('click', () => {
+    ov.remove(); resumeTimer(); S.pendingNext = false;
+    if (last) finish(); else { S.reto++; renderReto(); }
+  });
+  const ov = h('div',{class:'overlay',role:'dialog','aria-modal':'true','aria-label':'Piso superado'}, h('div',{class:'modal'},
+    h('div',{class:'label',text:`Piso ${piso+1} de 6 superado`}),
+    h('h2',{text: pick(['¡Felicitaciones!','¡Brillante!','¡Lo lograste!','¡Excelente trabajo!'])}),
+    h('p',{style:'margin:0',text:`${GUARD[R.g].name} se inclina ante ti: «${R.title}» ha sido superado.`}),
+    big, detail,
+    h('div',{class:'celebgrid'},
+      h('div',{class:'cbox'}, h('div',{class:'label',text:'Dado de la fortuna'}), h('div',{style:'display:grid;justify-items:center;gap:8px'}, die, rollBtn, dieMsg)),
+      h('div',{class:'cbox'},
+        R.syl ? [h('div',{class:'label',text:'Sílaba de la palabra clave'}), h('div',{class:'bigsyl',text:R.syl}), h('p',{class:'note',style:'margin:0;text-align:center',text:`Llevas ${S.syls.length} de 5 sílabas: ${S.syls.join(' · ')}. Ojo: no están en orden.`})]
+              : [h('div',{class:'label',text:'Palabra clave completa'}), h('div',{class:'bigsyl',style:'font-size:1.5rem',text:KEYWORD}), h('p',{class:'note',style:'margin:0;text-align:center',text:'Evaluamos para el aprendizaje. La Torre vuelve a recordarlo.'})])),
+    R.clue ? h('div',{class:'clue'}, h('div',{class:'label',text:'Nueva página del Grimorio'}), h('p',{text:R.clue})) : null,
+    next));
   document.body.append(ov);
-  ov.querySelector('.btn').focus();
+  const el = big.querySelector('#bigpts-n');
+  if (reduced()) el.textContent = '+' + pts;
+  else { const t0 = performance.now(); (function step(t){ const k = Math.min(1,(t-t0)/900); el.textContent = '+' + Math.round(pts*(1-Math.pow(1-k,3))); if (k<1 && el.isConnected) requestAnimationFrame(step); })(t0); }
+  rollBtn.focus();
 }
 function gameOver(reason){
   if (!S.running) return;
-  S.running = false; clearInterval(S.timer); Sfx.stopDrone(); Sfx.gameover();
-  document.querySelectorAll('.overlay,.grimoire').forEach(x=>x.remove());
-  S.restarts++;
+  S.running = false; S.dead = true; clearInterval(S.timer); Sfx.stopDrone(); Sfx.gameover();
+  S.restarts++; store.del('torre-run');
+  const piso = S.reto, pts = S.score;
   saveRemote({ reinicios: S.restarts, puntos: 0, retoActual: 1, estado: 'reiniciando' });
   show('over');
   app.append(h('div',{class:'wrap'}, h('div',{class:'win'},
     h('img',{src:IMG.sombra,alt:'La Sombra del Juicio',style:'width:220px;border-radius:10px;border:1px solid var(--line)'}),
     h('div',{class:'label',text:'La Sombra del Juicio te alcanzó'}),
     h('h2',{style:'font-size:1.8rem;color:var(--bad)',text:'¡Debes volver a empezar!'}),
-    h('p',{text:reason}),
-    h('p',{class:'quote',text:'«En mi torre el error es castigo… demuéstrame que para ti el error es una oportunidad de aprender.»'}),
-    h('p',{class:'note',text:`Llegaste al reto ${S.reto+1} con ${S.score.toLocaleString('es-CO')} puntos. Reinicios: ${S.restarts}. La nueva expedición vuelve a tener 30 minutos.`}),
-    h('button',{class:'btn',onclick:()=>{ saveRemote({ estado:'en curso' }); startRun(); }},'Volver a empezar desde el reto 1'))));
+    h('p',{style:'margin:0',text:reason}),
+    h('p',{class:'quote',style:'margin:0',text:'«En mi torre el error es castigo… demuéstrame que para ti el error es una oportunidad de aprender.»'}),
+    h('p',{class:'note',style:'margin:0',text:`Llegaste al piso ${piso+1} con ${num(pts)} puntos. Reinicios: ${S.restarts}. La nueva expedición vuelve a tener 30 minutos.`}),
+    h('button',{class:'btn',id:'restart-btn',onclick:()=>startRun()},'Volver a empezar desde el piso 1'))));
 }
 function toggleGrimoire(force){
   const ex = document.querySelector('.grimoire');
@@ -749,16 +1230,18 @@ function toggleGrimoire(force){
   if (ex) return;
   Sfx.flip();
   document.body.append(h('aside',{class:'grimoire','aria-label':'Grimorio'},
-    h('div',{style:'display:flex;justify-content:space-between;align-items:center;gap:10px'}, h('h3',{style:'color:var(--gold2)',text:'Grimorio de pistas'}), h('button',{class:'iconbtn',onclick:()=>toggleGrimoire()},'Cerrar')),
-    S.clues.length ? h('ol',{}, S.clues.map(c=>h('li',{text:c}))) : h('p',{class:'note',text:'Vacío. Cada reto superado te dará una página.'})));
+    h('div',{style:'display:flex;justify-content:space-between;align-items:center;gap:10px'}, h('h3',{style:'color:var(--gold2)',text:'Grimorio'}), h('button',{class:'iconbtn',onclick:()=>toggleGrimoire()},'Cerrar')),
+    h('div',{class:'label',text:'Sílabas de la palabra clave'}), sylChips(),
+    h('div',{class:'label',text:'Pistas'}),
+    S.clues.length ? h('ol',{}, S.clues.map(c=>h('li',{text:c}))) : h('p',{class:'note',style:'margin:0',text:'Vacío. Cada piso superado te dará una página.'})));
 }
 
-/* -------- victoria y recompensa -------- */
+/* -------- victoria, recompensa y bonus -------- */
 function finish(){
-  S.running = false; clearInterval(S.timer); Sfx.stopDrone();
+  S.running = false; clearInterval(S.timer); Sfx.stopDrone(); store.del('torre-run');
   const used = elapsed(); S.finalSec = Math.round(used);
   const bonus = Math.max(0, Math.round((TOTAL_SEC - used)/2));
-  S.lastScore = S.score + bonus;
+  S.lastScore = S.score + bonus; S.timeBonus = bonus;
   S.bestScore = Math.max(S.bestScore, S.lastScore);
   saveRemote({ puntos: S.lastScore, mejorPuntaje: S.bestScore, retosSuperados: RETOS.length, estado:'completado', tiempoSeg: S.finalSec, bonoTiempo: bonus, fin: new Date().toISOString() });
   show('commit');
@@ -768,36 +1251,108 @@ function finish(){
     h('img',{src:IMG.golem,alt:'Petra, la Cerradura Viviente',style:'width:180px;border-radius:10px;border:1px solid var(--line)'}),
     h('div',{class:'label',text:'La puerta se abre…'}),
     h('h2',{style:'font-size:1.6rem;color:var(--gold2)',text:'Último sello: tu compromiso'}),
-    h('p',{style:'max-width:56ch',text:'«Para reclamar la recompensa, deja escrita en la piedra una frase que resuma cómo quieres transformar tu forma de evaluar.»'}),
+    h('p',{style:'max-width:56ch;margin:0',text:'«Para reclamar la recompensa, deja escrita en la piedra una frase propia que resuma cómo quieres transformar tu forma de evaluar.»'}),
     h('div',{class:'field',style:'width:100%;max-width:560px;text-align:left'}, h('label',{for:'commit',class:'label',text:'Mi compromiso'}), ta, err),
-    h('button',{class:'btn',onclick:()=>{ const v = ta.value.trim(); if (v.length < 15){ err.textContent = 'Escribe una frase de al menos 15 caracteres.'; ta.focus(); return; } saveRemote({ compromiso: v }); renderReward(v); }},'Sellar compromiso y reclamar recompensa'))));
+    h('button',{class:'btn',id:'commit-ok',onclick:()=>{ const v = ta.value.trim(); if (v.length < 15){ err.textContent = 'Escribe una frase de al menos 15 caracteres.'; ta.focus(); return; } S.phrase = v; saveRemote({ compromiso: v }); renderReward(); }},'Sellar compromiso y reclamar recompensa'))));
 }
-function renderReward(phrase){
+function renderReward(){
   show('win'); Sfx.win();
-  const tier = S.lastScore >= 6200 ? ['Archimago de la Evaluación Formativa','Superaste la Torre casi sin tropiezos.'] : S.lastScore >= 5000 ? ['Maestro/a de la Retroalimentación','Dominas la escalera y sabes desmontar mitos.'] : ['Aprendiz Valiente','Escapaste: el error fue parte de tu camino.'];
-  const rank = players.slice().sort((a,c)=>(c.mejorPuntaje||0)-(a.mejorPuntaje||0)).findIndex(p=>p.id===S.docId);
+  const tier = S.lastScore >= 6600 ? ['Archimago de la Evaluación Formativa','Subiste la Torre casi sin tropiezos.'] : S.lastScore >= 5600 ? ['Maestro/a de la Retroalimentación','Dominas la escalera y sabes desmontar mitos.'] : ['Aprendiz Valiente','Escapaste: el error fue parte de tu camino.'];
   app.append(h('div',{class:'wrap'}, h('div',{class:'win'},
     h('div',{class:'label',text:'Recompensa obtenida'}),
-    h('div',{class:'seal'}, 'Llave Dorada', h('br'), 'de la', h('br'), 'Evaluación'),
+    h('div',{class:'seal'}, 'Llave Dorada', h('br'), 'del', h('br'), 'Aprendizaje'),
     h('h2',{style:'font-family:var(--f-title);font-size:clamp(1.5rem,4vw,2.3rem);color:var(--gold2)',text:tier[0]}),
-    h('p',{text:`${S.nombre} · ${S.grupo}. ${tier[1]}`}),
+    h('p',{style:'margin:0',text:`${S.nombre} · ${S.grupo}. ${tier[1]}`}),
     h('div',{class:'tiles'},
-      h('div',{class:'tile'}, h('span',{class:'label',text:'Puntaje final'}), h('b',{text:S.lastScore.toLocaleString('es-CO')})),
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Puntaje final'}), h('b',{text:num(S.lastScore)})),
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Bono por tiempo'}), h('b',{text:'+'+num(S.timeBonus)})),
       h('div',{class:'tile'}, h('span',{class:'label',text:'Tiempo'}), h('b',{text:fmtTime(S.finalSec)})),
-      h('div',{class:'tile'}, h('span',{class:'label',text:'Reinicios'}), h('b',{text:S.restarts})),
-      rank >= 0 ? h('div',{class:'tile'}, h('span',{class:'label',text:'Puesto en el salón'}), h('b',{text:'#'+(rank+1)})) : null),
-    h('p',{class:'quote',text:'«'+phrase+'»'}),
-    h('p',{style:'font-family:var(--f-head);color:var(--teal)',text:'Menos juicios, más preguntas. Menos correcciones, más crecimiento.'}),
-    h('div',{class:'row-actions',style:'justify-content:center'},
-      h('button',{class:'btn ghost',onclick:()=>{ S.docId = null; S.nombre=''; S.grupo=''; renderIntro(); }},'Registrar otro participante')))));
-  confetti();
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Reinicios'}), h('b',{text:S.restarts}))),
+    h('p',{class:'quote',style:'margin:0',text:'«'+S.phrase+'»'}),
+    h('p',{style:'font-family:var(--f-head);color:var(--teal);margin:0',text:'Menos juicios, más preguntas. Menos correcciones, más crecimiento.'}),
+    h('div',{class:'board','data-board':'1',style:'width:100%;max-width:560px;text-align:left'}),
+    h('div',{class:'cbox',style:'max-width:560px;text-align:center;border-color:var(--gold)'},
+      h('div',{class:'label',text:'Bonus desbloqueado'}),
+      h('p',{style:'margin:0',text:'Lía, Guardiana del Jardín, te entrega un regalo para tu aula: una Escalera de la Retroalimentación lista para usar, con frases y ejemplos prácticos.'}),
+      h('button',{class:'btn',id:'bonus-btn',onclick:renderBonus},'Abrir mi bonus')))));
+  renderBoard(); confetti();
+}
+
+const ESCALERA = [
+  { n:'Clarificar', para:'Asegurarte de entender lo que el estudiante quiso hacer antes de opinar. Evita malentendidos y revela información que pudo omitir.',
+    frases:['¿Puedes contarme con tus palabras qué buscabas lograr aquí?','¿Cómo llegaste a este resultado?','Cuando escribes «…», ¿a qué te refieres?','¿Qué fue lo más difícil de esta parte?'],
+    ej:[['En un ensayo','«¿Cuál es la idea principal que quieres que el lector recuerde al terminar?»'],['En matemáticas','«Explícame paso a paso cómo planteaste la ecuación del problema 2.»'],['En una exposición','«¿Por qué decidiste empezar con ese video y no con la pregunta?»']],
+    evita:'Preguntas que ya traen el regaño: «¿Por qué no leíste la guía?»' },
+  { n:'Valorar', para:'Reconocer fortalezas concretas. Genera confianza, motiva y le muestra al estudiante qué debe conservar.',
+    frases:['Destaco que…','Me gustó la manera en que… porque…','Un acierto de tu trabajo es…','Se nota tu avance en…'],
+    ej:[['En un ensayo','«Tu introducción engancha porque parte de una pregunta cercana al lector.»'],['En matemáticas','«Organizaste los datos en una tabla antes de operar; eso hace muy claro tu procedimiento.»'],['En una exposición','«Miraste al público y usaste ejemplos del colegio; por eso todos te siguieron.»']],
+    evita:'El elogio vacío («Muy bien», «Excelente») que no dice qué estuvo bien.' },
+  { n:'Expresar inquietudes', para:'Plantear tus dudas o desacuerdos como preguntas, para que el estudiante reflexione y descubra por sí mismo qué mejorar.',
+    frases:['Me pregunto si…','Me surge una duda: ¿…?','¿Qué pasaría si…?','Me inquieta que… ¿cómo lo ves tú?'],
+    ej:[['En un ensayo','«Me pregunto si tu segundo argumento apoya la tesis o abre un tema distinto. ¿Tú qué opinas?»'],['En matemáticas','«¿Qué pasaría si reemplazas tu respuesta en la ecuación original? ¿Se cumple?»'],['En una exposición','«Me surge una duda: ¿la diapositiva 4 se alcanza a leer desde el fondo del salón?»']],
+    evita:'Señalar el error como sentencia: «Esto está mal».' },
+  { n:'Sugerir', para:'Ofrecer recomendaciones claras, descriptivas y realizables, sobre todo cuando el estudiante no logra resolverlo por sí mismo.',
+    frases:['Podrías…','Te sugiero…','Una idea que puede ayudarte es…','Para la próxima entrega, intenta…'],
+    ej:[['En un ensayo','«Podrías cerrar retomando la pregunta inicial y respondiéndola con tus dos mejores argumentos.»'],['En matemáticas','«Te sugiero dibujar la situación antes de plantear la operación; mira el ejemplo 2 de la guía.»'],['En una exposición','«Una idea: reemplaza el párrafo de la diapositiva 4 por tres palabras clave y una imagen.»']],
+    evita:'Rehacerle el trabajo o dar órdenes sin explicación: «Cámbialo todo».' }
+];
+const PROMPT_IA = 'Actúa como un colega docente experto en evaluación formativa. Voy a describirte el trabajo de un estudiante de [grado] en [asignatura] y mi primera impresión.\n\nAyúdame a redactar una retroalimentación usando la escalera de la retroalimentación:\n1) Clarificar: dos preguntas para entender lo que el estudiante quiso hacer.\n2) Valorar: dos fortalezas concretas del trabajo.\n3) Expresar inquietudes: dos dudas formuladas como preguntas que lo inviten a reflexionar.\n4) Sugerir: dos recomendaciones específicas y realizables.\n\nUsa un tono empático, un lenguaje claro para la edad del estudiante y evita juicios o calificativos.\n\nTrabajo del estudiante: [describe aquí el trabajo y lo que observaste].';
+function bonusText(){
+  let t = 'ESCALERA DE LA RETROALIMENTACIÓN · Guía práctica\n\n';
+  ESCALERA.forEach((e,i) => { t += `${i+1}. ${e.n.toUpperCase()}\nPara qué: ${e.para}\nFrases para empezar:\n` + e.frases.map(f=>'  - '+f).join('\n') + '\nEjemplos:\n' + e.ej.map(([a,b])=>`  - ${a}: ${b}`).join('\n') + `\nEvita: ${e.evita}\n\n`; });
+  t += 'ANTES DE ENTREGARLA, REVISA\n  - ¿Es oportuna? Llega cuando todavía se puede mejorar.\n  - ¿Es clara? El estudiante la entiende sin traducción.\n  - ¿Es específica? Señala qué conservar y qué cambiar.\n\nPROMPT PARA TU ASISTENTE DE IA\n' + PROMPT_IA + '\n';
+  return t;
+}
+function copyBtn(label, getText, id){
+  const b = h('button',{class:'btn ghost small noprint',id}, label);
+  b.addEventListener('click', async () => {
+    const txt = getText();
+    try { await navigator.clipboard.writeText(txt); b.textContent = 'Copiado'; }
+    catch(e){ const ta = h('textarea',{style:'width:100%;min-height:160px',readonly:true}); ta.value = txt; b.replaceWith(ta); ta.focus(); ta.select(); return; }
+    setTimeout(()=>{ b.textContent = label; }, 1800);
+  });
+  return b;
+}
+function renderBonus(){
+  show('bonus'); Sfx.flip();
+  app.append(h('div',{class:'wrap screen'},
+    h('div',{class:'bonus-head'}, h('img',{src:IMG.elfa,alt:'Lía, Guardiana del Jardín'}),
+      h('div',{class:'screen',style:'gap:8px'}, h('div',{class:'label',text:'Bonus · Para llevar a tu aula'}),
+        h('h1',{style:'font-family:var(--f-title);font-size:clamp(1.6rem,4.5vw,2.6rem);color:var(--gold2)',text:'Tu Escalera de la Retroalimentación'}),
+        h('p',{style:'margin:0;max-width:62ch',text:'«Lo que aprendiste en la Torre florece cuando lo usas. Sube estos cuatro peldaños en orden cada vez que devuelvas un trabajo: primero pregunta, luego reconoce, después inquieta y, solo al final, sugiere.»'}),
+        h('div',{class:'row-actions noprint'}, copyBtn('Copiar la escalera completa', bonusText, 'copy-all'), Backend.canPrint ? h('button',{class:'btn ghost small',onclick:()=>window.print()},'Imprimir o guardar en PDF') : null))),
+    h('div',{class:'stairs'}, ESCALERA.map((e,i) => h('section',{class:'stair'},
+      h('h3',{}, h('span',{text:i+1}), e.n),
+      h('p',{style:'margin:0'}, h('b',{text:'Para qué: '}), e.para),
+      h('div',{}, h('div',{class:'label',text:'Frases para empezar'}), h('ul',{}, e.frases.map(f=>h('li',{text:f})))),
+      h('div',{class:'ex'}, e.ej.map(([a,b]) => h('div',{}, h('div',{class:'label',text:a}), b))),
+      h('p',{class:'avoid',style:'margin:0'}, h('b',{text:'Evita: '}), e.evita)))),
+    h('section',{class:'card'}, h('h3',{text:'Un ejemplo completo: el informe de Valentina'}),
+      h('p',{class:'note',style:'margin:0',text:'Informe de laboratorio de 8.º sobre germinación: buenas fotos y tabla de datos, pero la conclusión solo repite el título.'}),
+      h('ol',{},
+        h('li',{}, h('b',{text:'Clarificar. '}), '«Valentina, cuéntame: ¿qué querías demostrar con las semillas que dejaste sin luz?»'),
+        h('li',{}, h('b',{text:'Valorar. '}), '«Tus fotos y la tabla permiten seguir el experimento día a día; está muy bien organizado.»'),
+        h('li',{}, h('b',{text:'Expresar inquietudes. '}), '«Me pregunto si tu conclusión cuenta lo que observaste: ¿qué pasó con las semillas que no recibieron luz?»'),
+        h('li',{}, h('b',{text:'Sugerir. '}), '«Podrías reescribir la conclusión usando dos datos de tu tabla para explicar la diferencia entre los dos grupos.»'))),
+    h('section',{class:'card'}, h('h3',{text:'Antes de entregarla, revisa los tres sellos'}),
+      h('ul',{},
+        h('li',{}, h('b',{text:'¿Es oportuna? '}), 'Llega cuando el estudiante todavía puede usarla para mejorar.'),
+        h('li',{}, h('b',{text:'¿Es clara? '}), 'Usa palabras que el estudiante entiende sin traducción.'),
+        h('li',{}, h('b',{text:'¿Es específica? '}), 'Señala qué conservar y qué cambiar, con ejemplos del propio trabajo.'))),
+    h('section',{class:'card'}, h('h3',{text:'Escalera 2.0: pídele ayuda a tu asistente de IA'}),
+      h('p',{style:'margin:0',text:'Copia este prompt en ChatGPT, MagicSchool u otra herramienta, completa los corchetes y ajusta el resultado con tu criterio docente.'}),
+      h('pre',{class:'prompt',id:'prompt-ia',text:PROMPT_IA}),
+      h('div',{class:'row-actions'}, copyBtn('Copiar prompt', ()=>PROMPT_IA, 'copy-prompt'))),
+    h('div',{class:'foot noprint'},
+      h('button',{class:'btn ghost',onclick:renderReward},'Volver a mi recompensa'),
+      h('button',{class:'btn ghost',id:'again-btn',onclick:()=>{ S.docId = null; S.nombre=''; S.grupo=''; renderIntro(); }},'Registrar otro participante'))));
 }
 function confetti(){
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (reduced()) return;
   const c = $('#confetti'); c.hidden = false; const x = c.getContext('2d');
   c.width = innerWidth; c.height = innerHeight;
   const cols = ['#f3d998','#d6b36a','#9d7bff','#5fd4cf','#ff8fa3'];
-  const ps = Array.from({length:180},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height,r:4+Math.random()*6,vy:2+Math.random()*3,vx:-1+Math.random()*2,a:Math.random()*6,c:cols[Math.floor(Math.random()*cols.length)]}));
+  const ps = Array.from({length:180},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height,r:4+Math.random()*6,vy:2+Math.random()*3,vx:-1+Math.random()*2,a:Math.random()*6,c:pick(cols)}));
   const t0 = performance.now();
   (function f(t){
     x.clearRect(0,0,c.width,c.height);
@@ -805,6 +1360,21 @@ function confetti(){
     if (t - t0 < 6000) requestAnimationFrame(f); else { x.clearRect(0,0,c.width,c.height); c.hidden = true; }
   })(t0);
 }
+/* brasas de fondo */
+(function embers(){
+  if (reduced()) return;
+  const c = $('#embers'), x = c.getContext('2d'); let ps = [];
+  const size = () => { c.width = innerWidth; c.height = innerHeight; ps = Array.from({length:Math.min(46, Math.round(innerWidth/28))},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:.6+Math.random()*1.8,v:.15+Math.random()*.45,a:Math.random()*6,g:Math.random()<.3})); };
+  size(); addEventListener('resize', size);
+  (function f(){
+    if (!document.hidden){
+      x.clearRect(0,0,c.width,c.height);
+      ps.forEach(p=>{ p.y -= p.v; p.x += Math.sin(p.a += .01)*.3; if (p.y < -5){ p.y = c.height+5; p.x = Math.random()*c.width; }
+        x.globalAlpha = .25 + .35*Math.abs(Math.sin(p.a*2)); x.fillStyle = p.g ? '#9d7bff' : '#f3d998'; x.beginPath(); x.arc(p.x,p.y,p.r,0,7); x.fill(); });
+    }
+    requestAnimationFrame(f);
+  })();
+})();
 
 /* ---------------- versión docente ---------------- */
 function renderTeacherLogin(){
@@ -814,67 +1384,78 @@ function renderTeacherLogin(){
   const form = h('form',{class:'reg',style:'max-width:440px;margin:0 auto'},
     h('img',{src:IMG.cronista,alt:'La Cronista',style:'width:150px;border-radius:8px;justify-self:center'}),
     h('h2',{style:'font-size:1.3rem;color:var(--gold2);text-align:center',text:'Archivo de la Cronista'}),
-    h('p',{class:'note',style:'text-align:center',text:'Acceso exclusivo para docentes.'}),
+    h('p',{class:'note',style:'text-align:center;margin:0',text:'Acceso exclusivo para docentes.'}),
     h('div',{class:'field'}, h('label',{for:'t-pass',class:'label',text:'Contraseña'}), pw), err,
     h('button',{class:'btn',type:'submit'},'Entrar al panel'),
     h('button',{class:'btn ghost small',type:'button',onclick:renderIntro},'Volver'));
-  form.addEventListener('submit', e => { e.preventDefault(); if (pw.value === PASS){ S.teacherOk = true; S.teacherKey = pw.value; loadPlayers(); Sfx.unlock(); renderTeacher(); } else { err.textContent = 'Contraseña incorrecta.'; Sfx.bad(); pw.select(); } });
+  form.addEventListener('submit', e => { e.preventDefault(); if (pw.value === PASS){ S.teacherOk = true; S.teacherKey = pw.value; Sfx.unlock(); renderTeacher(); Backend.refresh(); } else { err.textContent = 'Contraseña incorrecta.'; Sfx.bad(); pw.select(); } });
   app.append(h('div',{class:'wrap'}, form));
   pw.focus();
 }
-const COLS = [['nombre','Participante'],['grupo','Grupo'],['puntos','Puntos actuales'],['mejorPuntaje','Mejor puntaje'],['retosSuperados','Retos'],['reinicios','Reinicios'],['tiempoSeg','Tiempo final'],['estado','Estado'],['compromiso','Compromiso'],['actualizado','Última actividad']];
+const COLS = [['nombre','Participante'],['grupo','Grupo'],['retosSuperados','Progreso'],['vidas','Vidas'],['puntos','Puntos actuales'],['mejorPuntaje','Mejor puntaje'],['reinicios','Reinicios'],['tiempoSeg','Tiempo final'],['estado','Estado'],['compromiso','Compromiso'],['actualizado','Última actividad']];
+const NUMCOLS = ['puntos','mejorPuntaje','retosSuperados','reinicios','tiempoSeg','vidas'];
 function renderTeacher(){
   const keepScroll = S.view === 'teacher' ? window.scrollY : 0;
-  show('teacher');
+  show('teacher'); S.confirming = false;
   const q = (S.filter||'').toLowerCase();
-  const rows = players.filter(p => !q || (p.nombre+' '+p.grupo).toLowerCase().includes(q))
-    .sort((a,b)=>{ const k=S.sort.k, va=a[k]??'', vb=b[k]??''; return (typeof va==='number'&&typeof vb==='number' ? va-vb : String(va).localeCompare(String(vb),'es')) * S.sort.dir; });
+  const rows = players.filter(p => !q || ((p.nombre||'')+' '+(p.grupo||'')).toLowerCase().includes(q))
+    .sort((a,b)=>{ const k=S.sort.k; if (NUMCOLS.includes(k)) return ((Number(a[k])||0)-(Number(b[k])||0))*S.sort.dir; return String(a[k]??'').localeCompare(String(b[k]??''),'es')*S.sort.dir; });
   const done = players.filter(p=>p.estado==='completado');
-  const avg = done.length ? Math.round(done.reduce((s,p)=>s+(p.mejorPuntaje||0),0)/done.length) : 0;
-  const avgT = done.length ? done.reduce((s,p)=>s+(p.tiempoSeg||0),0)/done.length : 0;
-  const filter = h('input',{id:'t-filter',placeholder:'Buscar por nombre o grupo',value:S.filter||'',style:'max-width:320px'});
-  filter.addEventListener('input',()=>{ S.filter = filter.value; clearTimeout(S.ft); S.ft = setTimeout(()=>{ renderTeacher(); const f=$('#t-filter'); f.focus(); f.setSelectionRange(f.value.length,f.value.length); },250); });
+  const avg = done.length ? Math.round(done.reduce((s,p)=>s+(Number(p.mejorPuntaje)||0),0)/done.length) : 0;
+  const avgT = done.length ? done.reduce((s,p)=>s+(Number(p.tiempoSeg)||0),0)/done.length : 0;
+  const filter = h('input',{id:'t-filter',placeholder:'Buscar por nombre o grupo',value:S.filter||'',style:'max-width:320px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:9px 12px'});
+  filter.addEventListener('input',()=>{ S.filter = filter.value; clearTimeout(S.ft); S.ft = setTimeout(()=>{ renderTeacher(); const f=$('#t-filter'); f.focus(); f.setSelectionRange(f.value.length,f.value.length); },300); });
   const stateLabel = p => p.estado==='completado' ? h('span',{class:'pill done',text:'Completó'}) : p.estado==='reiniciando' ? h('span',{class:'pill reset',text:'Reiniciando'}) : h('span',{class:'pill run',text:'En curso'});
   const table = h('table',{},
-    h('thead',{}, h('tr',{}, COLS.map(([k,l])=>h('th',{}, h('button',{onclick:()=>{ S.sort = { k, dir: S.sort.k===k ? -S.sort.dir : (typeof (players[0]||{})[k]==='number' ? -1 : 1) }; renderTeacher(); }}, l + (S.sort.k===k ? (S.sort.dir<0?' ↓':' ↑') : '')))), h('th',{text:''}))),
+    h('thead',{}, h('tr',{}, COLS.map(([k,l])=>h('th',{}, h('button',{onclick:()=>{ S.sort = { k, dir: S.sort.k===k ? -S.sort.dir : (NUMCOLS.includes(k) ? -1 : 1) }; renderTeacher(); }}, l + (S.sort.k===k ? (S.sort.dir<0?' ↓':' ↑') : '')))), h('th',{text:''}))),
     h('tbody',{}, rows.length ? rows.map(p => {
       const del = h('button',{class:'btn danger small'},'Borrar');
       del.addEventListener('click',()=>{
         S.confirming = true;
         const cell = del.parentElement; cell.innerHTML = '';
-        cell.append(h('span',{class:'note',text:'¿Seguro? '}), h('button',{class:'btn danger small',onclick:async()=>{ cell.textContent = 'Borrando…'; try{ await deletePlayer(p.id); }catch(e){ cell.textContent = 'No se pudo borrar.'; } S.confirming = false; renderTeacher(); }},'Sí'), ' ', h('button',{class:'btn ghost small',onclick:()=>{ S.confirming = false; renderTeacher(); }},'No'));
+        cell.append(h('span',{class:'note',text:'¿Seguro? '}), h('button',{class:'btn danger small',onclick:async()=>{ cell.textContent = 'Borrando…'; try{ await Backend.remove(p.id, S.teacherKey); players = players.filter(x=>x.id!==p.id); }catch(e){ console.warn(e); } S.confirming = false; renderTeacher(); }},'Sí'), ' ', h('button',{class:'btn ghost small',onclick:()=>{ S.confirming = false; renderTeacher(); }},'No'));
+      });
+      const sup = Number(p.retosSuperados)||0, fin = p.estado === 'completado';
+      const gift = fin ? null : h('button',{class:'btn small','data-gift':p.id,title:'Enviar una vida extra a este participante'},'+1 vida');
+      if (gift) gift.addEventListener('click', () => {
+        const n = (Number(p.vidasExtra)||0) + 1; p.vidasExtra = n;
+        Backend.save(p.id, { vidasExtra: n }, false);
+        gift.disabled = true; gift.textContent = 'Vida enviada'; toast(`Vida extra enviada a ${p.nombre}. Le llegará en unos segundos.`);
       });
       return h('tr',{},
         h('td',{text:p.nombre||'—'}), h('td',{text:p.grupo||'—'}),
-        h('td',{class:'num',text:(p.puntos||0).toLocaleString('es-CO')}), h('td',{class:'num'}, h('b',{text:(p.mejorPuntaje||0).toLocaleString('es-CO')})),
-        h('td',{class:'num',text:`${p.retosSuperados||0}/6`}), h('td',{class:'num',text:p.reinicios||0}),
-        h('td',{class:'num',text:p.tiempoSeg?fmtTime(p.tiempoSeg):'—'}), h('td',{}, stateLabel(p)),
+        h('td',{}, h('div',{class:'prog'}, Array.from({length:6},(_,i)=>h('i',{class:i<sup?'done':(!fin && i===sup?'now':'')}))), h('span',{class:'note',text: fin ? 'Escapó de la Torre' : `En el piso ${Math.min(6,sup+1)} · ${sup} superados`})),
+        h('td',{class:'num',text: fin ? '—' : (p.vidas === '' || p.vidas == null ? '—' : '♥ ' + (Number(p.vidas)||0))}),
+        h('td',{class:'num',text:num(p.puntos)}), h('td',{class:'num'}, h('b',{text:num(p.mejorPuntaje)})),
+        h('td',{class:'num',text:Number(p.reinicios)||0}),
+        h('td',{class:'num',text:Number(p.tiempoSeg)?fmtTime(p.tiempoSeg):'—'}), h('td',{}, stateLabel(p)),
         h('td',{}, p.compromiso ? h('span',{class:'quote',text:'«'+p.compromiso+'»'}) : h('span',{class:'note',text:'—'})),
         h('td',{class:'note',text:p.actualizado?new Date(p.actualizado).toLocaleString('es-CO',{dateStyle:'short',timeStyle:'short'}):'—'}),
-        h('td',{}, del));
-    }) : h('tr',{}, h('td',{colspan:COLS.length+1,class:'note',text: API ? 'Todavía no hay participantes registrados. La tabla se actualiza cada 10 segundos.' : 'Modo de prueba: solo se ven los participantes de este dispositivo. Configura config.js para ver a todos.'}))));
-  const csvBtn = h('button',{class:'btn ghost small',onclick:exportCsv},'Descargar CSV');
+        h('td',{}, h('div',{class:'row-actions',style:'flex-wrap:nowrap'}, gift, del)));
+    }) : h('tr',{}, h('td',{colspan:COLS.length+1,class:'note',text: Backend.shared ? 'Todavía no hay participantes registrados. Cuando alguien se registre aparecerá aquí.' : Backend.offlineNote}))));
+  table.querySelectorAll('tbody tr').forEach(tr => [...tr.children].forEach((td,i) => { if (COLS[i] && td.colSpan === 1) td.dataset.label = COLS[i][1]; }));
   app.append(h('div',{class:'wrap screen'},
     h('div',{class:'foot',style:'border:0;padding:0'},
       h('div',{}, h('div',{class:'label',text:'Versión docente'}), h('h1',{style:'font-size:clamp(1.5rem,3vw,2.2rem);color:var(--gold2)',text:'Archivo de la Cronista'})),
-      h('div',{class:'row-actions'}, csvBtn, h('button',{class:'btn ghost small',onclick:()=>{ S.teacherOk = false; renderIntro(); }},'Cerrar sesión docente'))),
+      h('div',{class:'row-actions'}, Backend.canDownload ? h('button',{class:'btn ghost small',onclick:exportCsv},'Descargar CSV') : null, h('button',{class:'btn ghost small',onclick:()=>Backend.refresh()},'Actualizar'), h('button',{class:'btn ghost small',onclick:()=>{ S.teacherOk = false; renderIntro(); }},'Cerrar sesión docente'))),
     h('div',{class:'tiles'},
       h('div',{class:'tile'}, h('span',{class:'label',text:'Participantes'}), h('b',{text:players.length})),
       h('div',{class:'tile'}, h('span',{class:'label',text:'Escaparon'}), h('b',{text:done.length})),
-      h('div',{class:'tile'}, h('span',{class:'label',text:'Puntaje promedio (escaparon)'}), h('b',{text:avg.toLocaleString('es-CO')})),
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Puntaje promedio (escaparon)'}), h('b',{text:num(avg)})),
       h('div',{class:'tile'}, h('span',{class:'label',text:'Tiempo promedio'}), h('b',{text:done.length?fmtTime(avgT):'—'})),
-      h('div',{class:'tile'}, h('span',{class:'label',text:'Reinicios totales'}), h('b',{text:players.reduce((s,p)=>s+(p.reinicios||0),0)}))),
-    h('div',{class:'row-actions'}, filter, h('span',{class:'note',text:'Se actualiza cada 10 segundos. Toca un encabezado para ordenar.'}), h('button',{class:'btn ghost small',onclick:loadPlayers},'Actualizar ahora')),
-    h('div',{class:'tablewrap'}, table)));
+      h('div',{class:'tile'}, h('span',{class:'label',text:'Reinicios totales'}), h('b',{text:players.reduce((s,p)=>s+(Number(p.reinicios)||0),0)}))),
+    h('div',{class:'row-actions'}, filter, h('span',{class:'note',text:Backend.liveNote + ' Toca un encabezado para ordenar.'})),
+    h('div',{class:'tablewrap teacher'}, table)));
   window.scrollTo(0, keepScroll);
 }
 async function exportCsv(){
   const esc = v => '"' + String(v??'').replace(/"/g,'""') + '"';
-  const head = ['Participante','Grupo','Puntos actuales','Mejor puntaje','Retos superados','Reinicios','Tiempo final (mm:ss)','Estado','Compromiso','Inicio','Última actividad'];
-  const lines = [head.map(esc).join(';')].concat(players.map(p=>[p.nombre,p.grupo,p.puntos||0,p.mejorPuntaje||0,p.retosSuperados||0,p.reinicios||0,p.tiempoSeg?fmtTime(p.tiempoSeg):'',p.estado,p.compromiso,p.inicio,p.actualizado].map(esc).join(';')));
-  const url = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' }));
-  const a = h('a',{href:url,download:'torre-evaluacion-resultados.csv'}); document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  const head = ['Participante','Grupo','Puntos actuales','Mejor puntaje','Pisos superados','Vidas','Vidas extra enviadas','Reinicios','Tiempo final (mm:ss)','Estado','Compromiso','Inicio','Última actividad'];
+  const lines = [head.map(esc).join(';')].concat(players.map(p=>[p.nombre,p.grupo,p.puntos||0,p.mejorPuntaje||0,p.retosSuperados||0,p.vidas??'',p.vidasExtra||0,p.reinicios||0,Number(p.tiempoSeg)?fmtTime(p.tiempoSeg):'',p.estado,p.compromiso,p.inicio,p.actualizado].map(esc).join(';')));
+  try { await Backend.download('torre-evaluacion-resultados.csv', '\ufeff' + lines.join('\r\n')); } catch(e){ console.warn(e); }
 }
+addEventListener('beforeunload', () => saveRun());
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveRun(); });
 
 renderIntro();
 </script>
